@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import pytest
 
+from app.data.scenarios import SCENARIOS
 from app.domain.errors import (
     ALREADY_REPORTS_TO_MANAGER,
     MANAGEMENT_CYCLE,
@@ -21,23 +22,18 @@ from app.domain.transfer import (
     validate_transfer,
 )
 from app.domain.tree import build_tree, collect_subtree_ids
+from tests.oracle import (
+    CHANGED_IDS,
+    MOVED_HEADCOUNT,
+    MOVED_PAYROLL,
+    MOVED_SUBTREE_IDS,
+    POST_TRANSFER_ROLLUPS,
+    TOTAL_PAYROLL,
+)
 
 
 def main_department() -> list[Employee]:
-    return [
-        Employee("HOD", "Head", "Department Head", 200_000, None),
-        Employee("MGR_A", "A Manager", "Programme Manager", 90_000, "HOD"),
-        Employee("MGR_B", "B Manager", "Laboratory Manager", 85_000, "HOD"),
-        Employee("MGR_C", "C Manager", "Operations Manager", 78_000, "HOD"),
-        Employee("LEAD_A", "A Lead", "Project Lead", 65_000, "MGR_A"),
-        Employee("LEAD_B", "B Lead", "Research Lead", 60_000, "MGR_B"),
-        Employee("E1", "Employee 1", "Developer", 42_000, "LEAD_A"),
-        Employee("E2", "Employee 2", "Developer", 38_000, "LEAD_A"),
-        Employee("E3", "Employee 3", "Designer", 47_000, "MGR_A"),
-        Employee("E4", "Employee 4", "Analyst", 41_000, "LEAD_B"),
-        Employee("E5", "Employee 5", "Technician", 36_000, "MGR_B"),
-        Employee("E6", "Employee 6", "Coordinator", 39_000, "MGR_C"),
-    ]
+    return SCENARIOS["main-12"].employees()
 
 
 def assert_transfer_error(
@@ -115,30 +111,17 @@ def test_oracle_transfer_produces_the_documented_impact_and_rollups() -> None:
     after = calculate_rollups(build_tree(apply_transfer(employees, "LEAD_A", "MGR_C")))
 
     assert isinstance(impact, TransferImpact)
-    assert after == {
-        "HOD": Rollup(12, 821_000),
-        "MGR_A": Rollup(2, 137_000),
-        "MGR_B": Rollup(4, 222_000),
-        "MGR_C": Rollup(5, 262_000),
-        "LEAD_A": Rollup(3, 145_000),
-        "LEAD_B": Rollup(2, 101_000),
-        "E1": Rollup(1, 42_000),
-        "E2": Rollup(1, 38_000),
-        "E3": Rollup(1, 47_000),
-        "E4": Rollup(1, 41_000),
-        "E5": Rollup(1, 36_000),
-        "E6": Rollup(1, 39_000),
-    }
-    assert impact.changed_rollup_ids == ["MGR_A", "MGR_C"]
+    assert after == POST_TRANSFER_ROLLUPS
+    assert impact.changed_rollup_ids == CHANGED_IDS
     assert "HOD" not in impact.changed_rollup_ids
     assert impact.changes == [
         RollupChange("MGR_A", before["MGR_A"], after["MGR_A"]),
         RollupChange("MGR_C", before["MGR_C"], after["MGR_C"]),
     ]
-    assert impact.moved_subtree_ids == ["LEAD_A", "E1", "E2"]
-    assert impact.moved_headcount == 3
-    assert impact.moved_payroll == 145_000
-    assert after["HOD"] == Rollup(12, 821_000)
+    assert impact.moved_subtree_ids == MOVED_SUBTREE_IDS
+    assert impact.moved_headcount == MOVED_HEADCOUNT
+    assert impact.moved_payroll == MOVED_PAYROLL
+    assert after["HOD"] == Rollup(12, TOTAL_PAYROLL)
     assert impact.root_unchanged is True
 
 

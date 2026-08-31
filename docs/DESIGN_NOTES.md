@@ -49,3 +49,11 @@ comparison in employee source order, rather than by guessing ancestor paths;
 this correctly excludes an unchanged shared root. Transfer processing is
 validate → immutable candidate copy → rebuild/recompute, so a validation error
 leaves both the canonical employee list and its existing derived rollups intact.
+
+### 2026-08-31 — D2 scenario-key service boundary and oracle separation
+`SCENARIOS` provides fresh ordered employee lists keyed by a scenario identifier
+and contains no expected-result values or test imports. The hand-transcribed
+oracle is test-only in `backend/tests/oracle.py`. `DepartmentService` derives a
+candidate transfer entirely before assigning current employees or the last
+successful impact; invalid loads deliberately clear all service state, while
+rejected transfers preserve it exactly.

@@ -1,24 +1,13 @@
 from __future__ import annotations
 
+from app.data.scenarios import SCENARIOS
 from app.domain.models import Employee
 from app.domain.tree import build_tree, collect_subtree_ids
+from tests.oracle import MOVED_SUBTREE_IDS
 
 
 def main_department() -> list[Employee]:
-    return [
-        Employee("HOD", "Head", "Department Head", 200_000, None),
-        Employee("MGR_A", "A Manager", "Programme Manager", 90_000, "HOD"),
-        Employee("MGR_B", "B Manager", "Laboratory Manager", 85_000, "HOD"),
-        Employee("MGR_C", "C Manager", "Operations Manager", 78_000, "HOD"),
-        Employee("LEAD_A", "A Lead", "Project Lead", 65_000, "MGR_A"),
-        Employee("LEAD_B", "B Lead", "Research Lead", 60_000, "MGR_B"),
-        Employee("E1", "Employee 1", "Developer", 42_000, "LEAD_A"),
-        Employee("E2", "Employee 2", "Developer", 38_000, "LEAD_A"),
-        Employee("E3", "Employee 3", "Designer", 47_000, "MGR_A"),
-        Employee("E4", "Employee 4", "Analyst", 41_000, "LEAD_B"),
-        Employee("E5", "Employee 5", "Technician", 36_000, "MGR_B"),
-        Employee("E6", "Employee 6", "Coordinator", 39_000, "MGR_C"),
-    ]
+    return SCENARIOS["main-12"].employees()
 
 
 def test_build_tree_preserves_report_source_order_when_manager_is_declared_later() -> None:
@@ -58,4 +47,4 @@ def test_build_tree_creates_source_ordered_children_entries_for_every_employee()
 def test_collect_subtree_ids_includes_self_and_visits_in_preorder() -> None:
     tree = build_tree(main_department())
 
-    assert collect_subtree_ids(tree, "LEAD_A") == ["LEAD_A", "E1", "E2"]
+    assert collect_subtree_ids(tree, "LEAD_A") == MOVED_SUBTREE_IDS

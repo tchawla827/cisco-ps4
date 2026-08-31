@@ -46,3 +46,11 @@ rollup-impact detection with exact source-order semantics.
 **Outcome:** accepted. Rollup highlights compare before/after values directly,
 not inferred ancestor paths; validation, candidate copy, and full recomputation
 remain separate so rejected requests cannot mutate authoritative inputs.
+
+### 2026-08-31 — D2 scenario service and independent oracle
+**Prompt:** Add scenario-key loading, a test-only oracle, and an in-memory
+service that computes transfer candidates before committing state.
+**Outcome:** accepted. Production scenarios hold operational employee inputs
+only; expected values live in `backend/tests/oracle.py`, while the service
+retains state only after validation, rebuild, recomputation, and invariant
+checks succeed.
