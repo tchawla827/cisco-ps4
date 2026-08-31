@@ -105,3 +105,13 @@ load/reset response snapshot and read-only organisation charts, without adding
 client-side hierarchy calculations or history.
 **Outcome:** accepted. The drawer renders backend-computed snapshots directly;
 its read-only charts cannot change the operational selection or transfer state.
+
+### 2026-08-31 — Task 12 frontend test strategy
+**Prompt:** Add focused frontend regression coverage for layout invariants,
+employee selection, transfer rejection retention, invalid-load clearing, reset
+semantics, and every API-client route contract.
+**Outcome:** accepted. Tests use complete `DepartmentView` and impact fixtures,
+mock only the API boundary, and assert accessible rendered state rather than
+component doubles or full-page snapshots. The layout fixture deliberately
+scrambles employee-record order while retaining `children_ids`, so rendering
+order remains a presentation contract of the normalized hierarchy.
