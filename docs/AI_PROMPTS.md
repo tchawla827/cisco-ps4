@@ -39,3 +39,10 @@ independent oracle kept outside production code.
 **Outcome:** accepted. Used recursive preorder for subtree collection and
 postorder for rollups; source-order appends preserve sibling ordering without
 sorting, and the root guard raises `RootInvariantError` on corrupted totals.
+
+### 2026-08-31 — Step 4 transfer domain logic
+**Prompt:** Implement pure transfer validation, immutable candidate copying, and
+rollup-impact detection with exact source-order semantics.
+**Outcome:** accepted. Rollup highlights compare before/after values directly,
+not inferred ancestor paths; validation, candidate copy, and full recomputation
+remain separate so rejected requests cannot mutate authoritative inputs.

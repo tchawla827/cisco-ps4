@@ -42,3 +42,10 @@ calculation without passing a parallel employee collection through each API.
 Rollups are rebuilt with a postorder traversal after each candidate hierarchy
 change. At the 30-employee limit, a full exact-integer recomputation is cheap,
 easier to audit, and avoids fragile incremental ancestor updates.
+
+### 2026-08-31 — Transfer impact exactness and atomicity
+Changed rollup IDs are derived by exact before/after headcount or payroll value
+comparison in employee source order, rather than by guessing ancestor paths;
+this correctly excludes an unchanged shared root. Transfer processing is
+validate → immutable candidate copy → rebuild/recompute, so a validation error
+leaves both the canonical employee list and its existing derived rollups intact.
