@@ -29,7 +29,7 @@ export function AppHeader({
     <header className="app-header">
       <div className="app-header__identity">
         <span className="app-header__eyebrow">UNIVERSITY OPERATIONS</span>
-        <span className="app-header__title">Department payroll</span>
+        <h1 className="app-header__title">Department payroll</h1>
       </div>
 
       <div className="app-header__controls" aria-label="Department controls">

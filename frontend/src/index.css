@@ -24,7 +24,7 @@ button:disabled, select:disabled { cursor: not-allowed; opacity: 0.55; }
 .app-header__identity, .app-header__controls, .scenario-control, .command-button, .icon-command, .message-banner, .workspace-zone__header, .employee-table__name-cell, .employee-table__badges { display: flex; align-items: center; }
 .app-header__identity { min-width: 180px; flex-direction: column; align-items: flex-start; gap: 2px; }
 .app-header__eyebrow, .workspace-zone__eyebrow, .scenario-control > span, .workspace-section__heading { color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: uppercase; }
-.app-header__title { color: var(--text); font-size: 17px; font-weight: 700; }
+.app-header__title { margin: 0; color: var(--text); font-size: 17px; font-weight: 700; }
 .app-header__controls { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .scenario-control { gap: 8px; }
 .scenario-control select { min-width: 224px; min-height: 36px; padding: 0 30px 0 10px; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 4px; }
