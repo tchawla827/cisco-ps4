@@ -79,3 +79,12 @@ dark console tokens and a quiet system sans alongside monospace identifiers and 
 numeric values. Root, selected, moved, and changed states each carry a symbol and label
 as well as a distinct semantic colour; later table, chart, details, and impact components
 share that same language rather than inventing component-local highlights.
+
+### 2026-08-31 — D4 presentation-only SVG tree layout
+`layoutTree` is a pure display helper with fixed card and gap dimensions. It
+walks `children_ids` in supplied order, assigns sequential leaf slots in a
+post-order pass, and places internal nodes at their first/last-child midpoint.
+The resulting coordinates and elbow paths are used only by `OrgTree`; they are
+never written into the department snapshot or fed back into transfer, rollup,
+or ordering decisions. Preview impact uses a dashed outline so it remains
+visually distinct from backend-confirmed transfer state.

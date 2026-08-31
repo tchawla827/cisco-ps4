@@ -11,6 +11,7 @@ import {
 import { AppHeader } from './components/AppHeader'
 import { EmployeeTable } from './components/EmployeeTable'
 import { MessageBanner, type BannerMessage } from './components/MessageBanner'
+import { OrgTree } from './components/OrgTree'
 import type { DepartmentView, ScenarioView, TransferImpactView } from './types/department'
 
 function messageFromError(error: unknown, fallback: string): BannerMessage {
@@ -165,9 +166,14 @@ function App() {
             <span className="workspace-zone__title" id="org-chart-heading">Organisation chart</span>
           </div>
           <div className="workspace-zone__body">
-            <div className="chart-stage">
-              {department ? 'Chart workspace ready.' : 'No organisation chart to display.'}
-            </div>
+            {department ? (
+              <OrgTree
+                department={department}
+                selectedId={selectedId}
+                previewImpact={previewImpact}
+                onSelect={setSelectedId}
+              />
+            ) : <div className="chart-stage">No organisation chart to display.</div>}
           </div>
         </section>
 

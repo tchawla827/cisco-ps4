@@ -83,3 +83,11 @@ invalid-load versus rejected-transfer state handling.
 multi-colour states; table and chart/detail placeholders deliberately avoid client-side
 hierarchy or payroll calculation. Transfer handlers live at the App boundary now so
 Task 10 controls retain the required rejection semantics.
+
+### 2026-08-31 — D4 SVG organisation tree
+**Prompt:** Add a pure, test-first SVG organisation chart with deterministic
+source-order layout, keyboard selection, and transfer-impact markers.
+**Outcome:** accepted. The chart consumes the existing normalized department
+view only: a post-order presentation layout assigns leaf slots and parent
+midpoints, while impact styling uses the API-provided preview or last committed
+impact without calculating hierarchy, payroll, or transfer state in the client.
