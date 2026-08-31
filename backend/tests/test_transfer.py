@@ -192,10 +192,18 @@ def test_rejected_cycle_transfer_is_atomic() -> None:
 
 def test_transfer_impact_is_deterministic_after_reset() -> None:
     original = main_department()
+    current = list(original)
 
-    first = transfer_impact(original, "LEAD_A", "MGR_C")
-    reset = list(original)
-    second = transfer_impact(reset, "LEAD_A", "MGR_C")
+    first = transfer_impact(current, "LEAD_A", "MGR_C")
+    current = apply_transfer(current, "LEAD_A", "MGR_C")
+    first_result = list(current)
+
+    current = list(original)
+
+    second = transfer_impact(current, "LEAD_A", "MGR_C")
+    current = apply_transfer(current, "LEAD_A", "MGR_C")
+    second_result = list(current)
 
     assert isinstance(first, TransferImpact)
     assert first == second
+    assert first_result == second_result
