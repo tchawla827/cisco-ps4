@@ -184,6 +184,10 @@ describe('App', () => {
     expect(screen.queryByText('↪ MOVED')).not.toBeInTheDocument()
     expect(screen.getByText('No transfer impact available.')).toBeInTheDocument()
     expect(screen.getByRole('row', { name: /HOD.*Head Dana/ })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('treeitem', { name: /HOD.*selected/ })).toHaveAttribute('aria-selected', 'true')
+    const treeItems = screen.getAllByRole('treeitem')
+    const treeItemLabels = treeItems.map((item) => item.getAttribute('aria-label') ?? '')
+
+    expect(treeItemLabels).not.toContainEqual(expect.stringMatching(/\b(?:moved|changed|preview)\b/i))
+    expect(screen.getByRole('treeitem', { name: /HOD.*root employee.*root.*selected/ })).toHaveAttribute('aria-selected', 'true')
   })
 })
