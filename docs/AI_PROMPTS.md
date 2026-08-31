@@ -64,3 +64,12 @@ handling outside the domain.
 JSON envelope (D6). Pydantic models normalize derived tree and rollup state
 into stable response views; business validation and transfer precedence remain
 in pure domain and service code.
+
+### 2026-08-31 — Step 7 frontend scaffold and API client
+**Prompt:** Recover the interrupted React, TypeScript, and Vite frontend
+scaffold; add API view types and a typed client for all department routes, then
+verify the development proxy renders the main department rollup.
+**Outcome:** accepted. Replaced generated Vite demo content with a raw JSON
+stub that loads `main-12`; added JSdom Vitest setup, Testing Library support,
+and a shared non-2xx parser that always throws `ApiError` with backend code and
+message rather than a partial department.
