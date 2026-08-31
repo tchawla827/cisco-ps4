@@ -134,3 +134,29 @@ headcount 1; `invalid-duplicate-id` cleared the workspace to
 rollups). Screenshots saved under `.superpowers/sdd/task-13-evidence/`. No
 production-code defects were found, so no `backend/app/**` or `frontend/src`
 changes were made in this step.
+
+### 2026-08-31 — Frontend revamp: tree-as-hero layout, drag-and-drop, add/delete
+**Prompt:** Revamp the frontend into a tree-as-hero layout with a collapsible
+sidebar and review panel, a zoomable/pannable organisation chart supporting
+`@dnd-kit` drag-and-drop transfers, and backend add/delete-employee support,
+per `docs/superpowers/specs/2026-08-31-frontend-revamp-design.md` and
+`docs/superpowers/plans/2026-08-31-frontend-revamp.md`. Then (this task)
+verify the full backend/frontend suites, build, and lint; drive a live
+walkthrough of load, collapse/expand, zoom/pan/collapse, drag-to-transfer,
+cycle rejection, add employee, blocked delete, leaf delete, and reset; and
+record the results here and in `docs/DESIGN_NOTES.md`.
+**Outcome:** modified. 108 backend tests and 38 frontend tests passed, build
+and lint were clean. The live walkthrough was completed end-to-end but the
+drag-and-drop and visual zoom/pan/collapse steps were exercised through the
+existing text-based Transfer and Roster controls instead of literal pointer
+drags, because the walkthrough surfaced a real bug: the organisation chart's
+wrapping `<section className="workspace-zone workspace-zone--chart">` in
+`App.tsx` has no matching CSS rule, so `OrgTreeCanvas`'s `flex:1` height
+chain collapses to `0px` and the entire chart renders invisibly (fully
+present in the DOM/accessibility tree, confirmed interactive via a
+dispatched JS click, but not visible or pointer-clickable) from the very
+first load. All non-visual transfer/add/delete/reset outcomes matched
+`docs/EXPECTED_RESULTS.md` exactly. Per this task's verification-only scope,
+the CSS bug was documented as a concern rather than fixed; no
+`backend/app/**` or `frontend/src` changes were made in this step, only
+`docs/DESIGN_NOTES.md` and this file.

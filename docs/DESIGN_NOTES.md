@@ -150,3 +150,93 @@ might reach for:
   disagreeing. This is also why `HOD` is asserted absent from
   `changed_rollup_ids` in `test_transfer.py`, not merely absent from a
   hand-picked list of "expected" IDs.
+
+### 2026-08-31 — Frontend revamp: tree-as-hero layout, drag-and-drop transfer, add/delete
+
+The workspace shell moved from the three-stacked-panel cockpit to a tree-as-hero
+layout: `CollapsiblePanel` wraps the employee roster (left) and the review work
+queue (right, details/transfer/impact), both independently collapsible to a
+48px rail, while the organisation chart occupies the remaining grid column as
+the dominant, always-widest zone. `layoutTree` was extended to accept
+per-node `collapsedIds` so a manager's subtree can be hidden from the layout
+pass itself (not just visually), keeping the presentation-only guarantee from
+D4 — collapsing is client-side view state, never sent to or derived from the
+backend.
+
+`OrgTreeCanvas` replaces the static SVG chart with a zoomable/pannable stage
+(`tree-stage__viewport` + `tree-stage__world`, scale/translate driven by
+wheel and drag gestures) built on `@dnd-kit/core`. Each employee renders as a
+draggable `org-node-card`; dropping one card onto another calls the exact
+same `previewTransfer`/`transfer` API functions the text-based Transfer
+controls already called pre-revamp — `resolveDrop` in `App.tsx` turns a
+dnd-kit drag-end event into the same `{employee_id, new_manager_id}` payload,
+and `TransferDropConfirm` is the same impact-preview-then-confirm popover
+shape as the existing staged Transfer panel, just triggered by a drop instead
+of two `<select>`s and a Preview click. No new transfer semantics, validation
+order, or error codes were introduced; drag-and-drop is a second input
+method over the identical preview/apply plumbing.
+
+Add/delete employee is backed by a new additive `backend/app/domain/roster.py`
+module: `validate_delete` runs existence → root-protection
+(`ROOT_DELETE_FORBIDDEN`) → direct-reports (`EMPLOYEE_HAS_DIRECT_REPORTS`) as
+a first-error sequence mirroring the load/transfer validators' style, and
+`apply_add`/`apply_delete` return new source-order-preserving employee lists
+(append for add, filter for delete) rather than mutating in place — the same
+validate-then-candidate-copy discipline as transfer. `DepartmentService`
+gained `add_employee`/`delete_employee` methods that validate, build the
+candidate list, and run a full rollup recompute exactly like a committed
+transfer. Two routes expose this: `POST /api/department/employees` and
+`DELETE /api/department/employees/{employee_id}`, both returning the same
+`DepartmentView` shape as every other mutating route. `RosterControls` is the
+sidebar's graphical/text add/delete form (per the plan, a separate "+"
+control was not built — the sidebar form is both the graphical and
+text-based entry point).
+
+**Manual walkthrough (Task 12).** Backend: 108 tests pass (`pytest`, up from
+86 — Tasks 1–11 added roster-domain, service, and API coverage). Frontend:
+38 tests pass (`vitest`, up from 16), `npm run build` is clean, `npm run
+lint` is clean (one pre-existing `react-refresh/only-export-components`
+warning in `OrgTreeCanvas.tsx`, no errors). Live walkthrough against a
+running backend (`:8000`) and frontend (`:5174`) via Playwright MCP
+confirmed, through the existing text-based Transfer and Roster controls (see
+concern below): `main-12` loads with `HOD` at headcount 12 / ₹8,21,000;
+sidebar and work-queue collapse/expand cleanly; the `LEAD_A → MGR_C`
+preview/apply reproduces `docs/EXPECTED_RESULTS.md` §3 exactly (`MGR_A`
+5→2/₹2,82,000→₹1,37,000, `MGR_C` 2→5/₹1,17,000→₹2,62,000, `HOD` unchanged at
+12/₹8,21,000); reset restores the pre-transfer state; the `MGR_A → E3` cycle
+preview surfaces `MANAGEMENT_CYCLE` inline (`"Transfer would create a
+management cycle: 'MGR_A' -> 'E3'"`) without mutating the department; adding
+`E7` under `MGR_B` appears immediately in the table, tree, and manager
+dropdowns with headcount 1/₹30,000 and rolls `MGR_B` up to 4/₹2,16,000;
+deleting `MGR_A` while it still has direct reports is blocked with
+`EMPLOYEE_HAS_DIRECT_REPORTS` and changes nothing; deleting the leaf `E5`
+removes it everywhere and rolls `MGR_B` to 4/₹2,16,000 (3 remaining + the
+just-added `E7`); a final reset returns the department byte-for-byte to the
+loaded `main-12` state (12 employees, `HOD` 12/₹8,21,000, `E7` gone, `E5`
+back).
+
+**Concern found during the walkthrough, not fixed here per this task's
+verification-only scope:** `OrgTreeCanvas`'s wrapping element in `App.tsx`
+(`<section className="workspace-zone workspace-zone--chart">`) has no
+matching CSS rule anywhere in `workspace.css`/`index.css`/`theme.css`. Every
+other grid zone (`CollapsiblePanel`, used for the roster and work-queue
+columns) has a real `display:flex; flex:1; min-height:0` chain, but the
+chart column's own wrapper stays `display:block`, so `.tree-stage`'s `flex:1`
+has no flex container to size against and `.tree-stage__viewport`'s
+`flex:1; min-height:0; overflow:hidden` collapses to `0px` height. The
+practical effect: the entire organisation chart — every `org-node-card`,
+edge path, and collapse chevron — is fully present in the DOM and the
+accessibility tree (confirmed via `getBoundingClientRect`, ARIA roles, and a
+dispatched click on a `.org-node-collapse` button, which *did* correctly
+toggle the underlying collapsed-node React state from 12 to 10 rendered
+tree items) but is visually **invisible and unclickable through normal
+pointer interaction** at every viewport size tested (1280×800 default and
+1600×1000), reproducing from the very first load, before any pan/zoom/resize
+action. This blocks the graphical parts of walkthrough step 3 (visual
+zoom/pan/collapse) and step 4 (drag-and-drop) entirely; steps 1–2 and 5–9
+were completed instead through the pre-existing text-based Transfer and
+Roster controls, which are unaffected because they live in the correctly-
+styled `CollapsiblePanel` columns. The fix is almost certainly a one-line
+CSS addition (e.g. `.workspace-zone--chart { display: flex; flex-direction:
+column; min-height: 0; }` to match `.collapsible-panel`'s pattern), but per
+this task's scope that fix was left for a follow-up rather than made here.
