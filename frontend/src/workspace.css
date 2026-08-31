@@ -21,7 +21,7 @@
 .tree-stage__edges { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
 .tree-stage__edges path { fill: none; stroke: var(--border); stroke-width: 2; }
 
-.org-node-slot { position: absolute; top: 0; left: 0; width: 180px; height: 88px; }
+.org-node-slot { position: absolute; top: 0; left: 0; width: 210px; height: 88px; }
 .org-node-card { display: flex; box-sizing: border-box; width: 100%; height: 100%; flex-direction: column; justify-content: center; gap: 3px; padding: 10px 12px; cursor: grab; -webkit-user-select: none; user-select: none; background: var(--panel-raised); border: 1.5px solid var(--border); border-radius: 6px; }
 .org-node-card:hover { border-color: var(--interactive); }
 .org-node-card--selected { border-width: 3px; border-color: var(--interactive); }

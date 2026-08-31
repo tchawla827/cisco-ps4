@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, Maximize2, Minus, Plus } from 'lucide-react'
-import { type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent, useRef, useState } from 'react'
+import { type MouseEvent as ReactMouseEvent, type WheelEvent as ReactWheelEvent, useEffect, useRef, useState } from 'react'
 import { DndContext, type DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -32,10 +32,12 @@ export function resolveDrop(
   return { employeeId, managerId }
 }
 
-// aria-label wording below intentionally mirrors the old SVG OrgTree.tsx
-// (`${id}, ${name}, ${headcount} headcount, ${payroll} payroll${manager}${status}`)
-// so App.test.tsx's existing role="treeitem"/role="tree" assertions keep working
-// unchanged against this HTML-card canvas.
+// aria-label wording below is based on the old SVG OrgTree.tsx's format
+// (`${id}, ${name}, ${headcount} headcount, ${payroll} payroll${manager}${status}`),
+// with `role` inserted after `name` so the visible card (which drops role from
+// its metrics line to make room for the full payroll figure) still exposes it
+// accessibly. App.test.tsx's role="treeitem"/role="tree" assertions match with
+// substring/regex patterns, so this stays unchanged against this HTML-card canvas.
 function OrgNodeCard({
   employeeId,
   name,
@@ -51,6 +53,7 @@ function OrgNodeCard({
   isChanged,
   hasChildren,
   isCollapsed,
+  scale,
   onSelect,
   onToggleCollapse,
 }: {
@@ -68,13 +71,26 @@ function OrgNodeCard({
   isChanged: boolean
   hasChildren: boolean
   isCollapsed: boolean
+  scale: number
   onSelect: (employeeId: string) => void
   onToggleCollapse: (employeeId: string) => void
 }) {
   const draggable = useDraggable({ id: employeeId, disabled: isRoot })
   const droppable = useDroppable({ id: employeeId })
+  // draggable.transform is a screen-pixel delta from dnd-kit's pointer sensor,
+  // but this card lives inside .tree-stage__world which has scale(view.scale)
+  // applied. Dividing by scale converts the screen-pixel delta back into the
+  // world's own (pre-scale) coordinate space so the card tracks the cursor
+  // instead of drifting at non-1x zoom.
   const dragStyle = draggable.transform
-    ? { transform: CSS.Translate.toString(draggable.transform) }
+    ? {
+        transform: CSS.Translate.toString({
+          x: draggable.transform.x / scale,
+          y: draggable.transform.y / scale,
+          scaleX: 1,
+          scaleY: 1,
+        }),
+      }
     : undefined
 
   const setRefs = (node: HTMLDivElement | null) => {
@@ -97,7 +113,7 @@ function OrgNodeCard({
   ].filter((marker): marker is string => marker !== null)
   const statusDescription = markers.length > 0 ? `, ${markers.join(', ')}` : ''
   const managerDescription = managerId === null ? ', root employee' : `, reports to ${managerId}`
-  const cardLabel = `${employeeId}, ${name}, ${headcount} headcount, ${formatCurrency(payroll)} payroll${managerDescription}${statusDescription}`
+  const cardLabel = `${employeeId}, ${name}, ${role}, ${headcount} headcount, ${formatCurrency(payroll)} payroll${managerDescription}${statusDescription}`
 
   return (
     <div className="org-node-slot" style={{ transform: `translate3d(${x}px, ${y}px, 0)` }}>
@@ -135,7 +151,7 @@ function OrgNodeCard({
           {isChanged ? ' Δ' : ''}
         </span>
         <span className="org-node-card__name" aria-hidden="true">{name}</span>
-        <span className="org-node-card__metrics" aria-hidden="true">{role} · HC {headcount} · {formatCurrency(payroll)}</span>
+        <span className="org-node-card__metrics" aria-hidden="true">HC {headcount} · {formatCurrency(payroll)}</span>
       </div>
       {hasChildren ? (
         <button
@@ -173,6 +189,7 @@ export function OrgTreeCanvas({
     originY: 0,
   })
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const viewportRef = useRef<HTMLDivElement>(null)
 
   const layout = layoutTree(department, collapsedIds)
   const employeesById = new Map(department.employees.map((employee) => [employee.employee_id, employee]))
@@ -182,13 +199,46 @@ export function OrgTreeCanvas({
 
   const clampScale = (scale: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale))
 
+  const handleFitToScreen = () => {
+    const viewport = viewportRef.current
+    if (!viewport || viewport.clientWidth === 0 || viewport.clientHeight === 0) return
+    if (layout.width === 0 || layout.height === 0) return
+    const scale = clampScale(Math.min(
+      viewport.clientWidth / layout.width,
+      viewport.clientHeight / layout.height,
+    ))
+    const x = (viewport.clientWidth - layout.width * scale) / 2
+    const y = (viewport.clientHeight - layout.height * scale) / 2
+    setView({ scale, x, y })
+  }
+
+  // Fit the whole tree into view by default (rather than the raw {scale:1,x:0,y:0}
+  // origin, which for wide trees frames only the leftmost branch and leaves the
+  // root off-screen). Re-fits whenever the loaded department changes; guarded
+  // against firing before the viewport has a real rendered size.
+  useEffect(() => {
+    handleFitToScreen()
+    // handleFitToScreen intentionally omitted from deps: it closes over `layout`,
+    // which is recomputed every render, and depending on it would re-fit (and
+    // stomp any manual zoom/pan) on every collapse/select/preview change, not
+    // just on a genuinely new department.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [department.scenario, department.root_id])
+
   const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     event.preventDefault()
     setView((current) => ({ ...current, scale: clampScale(current.scale - event.deltaY * 0.001) }))
   }
 
   const handleViewportMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return
+    const target = event.target as HTMLElement
+    // Pan starts on the empty viewport background or on the world layer's own
+    // empty space (the world div spans the tree's full bounding box, so most
+    // of the visible canvas is "inside" it without being on a card/button).
+    // Cards and buttons are excluded because dnd-kit's listeners on the card
+    // itself intercept those pointer events before they'd reach this handler.
+    const isBackground = target === event.currentTarget || target.classList.contains('tree-stage__world')
+    if (!isBackground) return
     panState.current = {
       panning: true,
       startX: event.clientX,
@@ -223,13 +273,14 @@ export function OrgTreeCanvas({
         <button type="button" className="icon-command" onClick={() => setView((current) => ({ ...current, scale: clampScale(current.scale + 0.2) }))} title="Zoom in">
           <Plus aria-hidden="true" size={16} />
         </button>
-        <button type="button" className="icon-command" onClick={() => setView({ scale: 1, x: 0, y: 0 })} title="Fit to screen">
+        <button type="button" className="icon-command" onClick={handleFitToScreen} title="Fit to screen">
           <Maximize2 aria-hidden="true" size={16} />
         </button>
       </div>
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div
           className="tree-stage__viewport"
+          ref={viewportRef}
           onWheel={handleWheel}
           onMouseDown={handleViewportMouseDown}
           onMouseMove={handleViewportMouseMove}
@@ -265,6 +316,7 @@ export function OrgTreeCanvas({
                   isChanged={changedIds.has(employee.employee_id)}
                   hasChildren={employee.children_ids.length > 0}
                   isCollapsed={collapsedIds.has(employee.employee_id)}
+                  scale={view.scale}
                   onSelect={onSelect}
                   onToggleCollapse={onToggleCollapse}
                 />

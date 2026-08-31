@@ -215,6 +215,7 @@ function App() {
     try {
       const updated = await addEmployee(request)
       setDepartment(updated)
+      setPreviewImpact(null)
       setBanner({ kind: 'success', message: `Added ${request.employee_id}.` })
     } catch (error) {
       setBanner(messageFromError(error, 'Unable to add employee.'))
@@ -229,6 +230,7 @@ function App() {
     try {
       const updated = await deleteEmployee(employeeId)
       setDepartment(updated)
+      setPreviewImpact(null)
       setSelectedId((current) => (current === employeeId ? updated.root_id : current))
       setBanner({ kind: 'success', message: `Deleted ${employeeId}.` })
     } catch (error) {
@@ -280,7 +282,7 @@ function App() {
           )}
         </CollapsiblePanel>
 
-        <section className="workspace-zone workspace-zone--chart" aria-label="Organisation chart">
+        <section className="workspace-zone--chart" aria-label="Organisation chart">
           {department ? (
             <OrgTreeCanvas
               department={department}

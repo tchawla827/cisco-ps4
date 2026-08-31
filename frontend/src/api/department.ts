@@ -81,5 +81,5 @@ export function addEmployee(body: AddEmployeeRequest): Promise<DepartmentView> {
 }
 
 export function deleteEmployee(employeeId: string): Promise<DepartmentView> {
-  return request<DepartmentView>(`/api/department/employees/${employeeId}`, { method: 'DELETE' })
+  return request<DepartmentView>(`/api/department/employees/${encodeURIComponent(employeeId)}`, { method: 'DELETE' })
 }
