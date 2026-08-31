@@ -9,6 +9,7 @@ import {
   transfer,
 } from './api/department'
 import { AppHeader } from './components/AppHeader'
+import { CompareDrawer } from './components/CompareDrawer'
 import { EmployeeDetails } from './components/EmployeeDetails'
 import { EmployeeTable } from './components/EmployeeTable'
 import { ImpactPanel } from './components/ImpactPanel'
@@ -233,6 +234,14 @@ function App() {
           </div>
         </aside>
       </section>
+      {department && originalDepartment ? (
+        <CompareDrawer
+          currentDepartment={department}
+          originalDepartment={originalDepartment}
+          isOpen={compareOpen}
+          onClose={() => setCompareOpen(false)}
+        />
+      ) : null}
     </main>
   )
 }

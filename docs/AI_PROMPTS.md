@@ -98,3 +98,10 @@ impact panel that preserves committed state through rejected transfer attempts.
 **Outcome:** accepted. Controls call the existing API boundary directly; the
 impact panel presents backend-provided source-order changes and distinguishes a
 preview with dashed treatment rather than calculating payroll client-side.
+
+### 2026-08-31 — Task 11 comparison drawer
+**Prompt:** Add an accessible original/current comparison drawer using the
+load/reset response snapshot and read-only organisation charts, without adding
+client-side hierarchy calculations or history.
+**Outcome:** accepted. The drawer renders backend-computed snapshots directly;
+its read-only charts cannot change the operational selection or transfer state.

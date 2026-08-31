@@ -111,5 +111,23 @@ button:disabled, select:disabled { cursor: not-allowed; opacity: 0.55; }
 .org-tree__metrics { fill: var(--text-muted); font-size: 11px; }
 .org-tree__markers { font-size: 12px; font-weight: 800; }
 .org-tree__marker--root { fill: var(--root); } .org-tree__marker--selected { fill: #9ebcff; } .org-tree__marker--moved { fill: var(--moved); } .org-tree__marker--changed { fill: var(--changed); }
+.compare-drawer { position: fixed; z-index: 20; inset: 0; display: flex; justify-content: flex-end; }
+.compare-drawer__backdrop { position: absolute; inset: 0; width: 100%; min-height: 100%; padding: 0; background: rgb(0 0 0 / 62%); border: 0; cursor: default; }
+.compare-drawer__panel { position: relative; display: flex; width: min(1120px, calc(100vw - 24px)); min-height: 0; flex-direction: column; background: var(--panel); border-left: 1px solid var(--border); box-shadow: -18px 0 38px rgb(0 0 0 / 35%); animation: compare-drawer-slide-in 160ms ease-out; }
+.compare-drawer__header { display: flex; min-height: 64px; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 14px 10px 18px; border-bottom: 1px solid var(--border); }
+.compare-drawer__eyebrow, .compare-tree h3 { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: uppercase; }
+.compare-drawer__header h2 { margin: 2px 0 0; font-size: 15px; font-weight: 700; }
+.compare-drawer__legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 8px 18px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 11px; }
+.compare-drawer__legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.compare-drawer__legend strong { font-family: var(--font-mono); font-size: 13px; }
+.compare-legend__root { color: var(--root); } .compare-legend__moved { color: var(--moved); } .compare-legend__changed { color: var(--changed); }
+.compare-drawer__trees { display: grid; min-height: 0; flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; background: var(--border); }
+.compare-tree { display: flex; min-width: 0; min-height: 0; flex-direction: column; background: var(--panel); }
+.compare-tree h3 { min-height: 38px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.compare-tree .org-tree-scroll { padding: 14px; }
+.compare-tree .org-tree__node { cursor: default; }
+.compare-tree .org-tree__node:hover rect { stroke: var(--border); }
+@keyframes compare-drawer-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .compare-drawer__panel { animation: none; } }
 @media (max-width: 1120px) { .cockpit { grid-template-columns: minmax(340px, 1fr) minmax(370px, 1.1fr); overflow: auto; } .workspace-zone--right { grid-column: 1 / -1; min-height: 220px; } .workspace-zone--right .workspace-zone__body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } .workspace-zone--right .workspace-section { border-right: 1px solid var(--border); border-bottom: 0; } }
-@media (max-width: 760px) { .app-header { align-items: flex-start; flex-direction: column; } .app-header__controls { width: 100%; justify-content: flex-start; } .scenario-control { flex: 1 1 100%; } .scenario-control select { min-width: 0; flex: 1; } .cockpit { grid-template-columns: 1fr; overflow: visible; } .workspace-zone { min-height: 300px; } .workspace-zone--table .workspace-zone__body { overflow: visible; } .employee-table-scroll { overflow-x: auto; } .workspace-zone--right { grid-column: auto; min-height: 0; } .workspace-zone--right .workspace-zone__body { display: block; } .workspace-zone--right .workspace-section { border-right: 0; border-bottom: 1px solid var(--border); } }
+@media (max-width: 760px) { .app-header { align-items: flex-start; flex-direction: column; } .app-header__controls { width: 100%; justify-content: flex-start; } .scenario-control { flex: 1 1 100%; } .scenario-control select { min-width: 0; flex: 1; } .cockpit { grid-template-columns: 1fr; overflow: visible; } .workspace-zone { min-height: 300px; } .workspace-zone--table .workspace-zone__body { overflow: visible; } .employee-table-scroll { overflow-x: auto; } .workspace-zone--right { grid-column: auto; min-height: 0; } .workspace-zone--right .workspace-zone__body { display: block; } .workspace-zone--right .workspace-section { border-right: 0; border-bottom: 1px solid var(--border); } .compare-drawer__panel { width: 100%; } .compare-drawer__trees { grid-template-columns: minmax(0, 1fr); overflow: auto; } .compare-tree { min-height: 360px; } }

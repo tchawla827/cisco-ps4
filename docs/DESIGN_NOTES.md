@@ -97,3 +97,11 @@ the fallback to `last_successful_transfer` keeps confirmed impact visible after
 cycle or root-protection rejections. On narrow screens the employee table moves
 to page flow and retains only horizontal scrolling, preventing an inspected row
 from leaving the mobile source-records pane vertically scrolled.
+
+### 2026-08-31 — D5 backend snapshot comparison
+The comparison drawer receives `originalDepartment` only from successful load
+or reset responses and renders it as returned by the backend. `OrgTree` now has
+a read-only rendering mode for the drawer: it preserves source-ordered layout
+and backend-provided impact markers while removing tree-item activation, so the
+comparison cannot mutate App selection or introduce an alternate hierarchy,
+rollup, or history model.

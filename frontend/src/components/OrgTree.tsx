@@ -5,9 +5,11 @@ import { layoutTree, NODE_H, NODE_W } from './orgTreeLayout'
 
 interface OrgTreeProps {
   department: DepartmentView
-  selectedId: string | null
-  previewImpact: TransferImpactView | null
-  onSelect: (employeeId: string) => void
+  selectedId?: string | null
+  previewImpact?: TransferImpactView | null
+  onSelect?: (employeeId: string) => void
+  readOnly?: boolean
+  ariaLabel?: string
 }
 
 function formatPayroll(amount: number): string {
@@ -21,20 +23,28 @@ function selectOnActivation(event: KeyboardEvent<SVGGElement>, employeeId: strin
   }
 }
 
-export function OrgTree({ department, selectedId, previewImpact, onSelect }: OrgTreeProps) {
+export function OrgTree({
+  department,
+  selectedId = null,
+  previewImpact = null,
+  onSelect,
+  readOnly = false,
+  ariaLabel = 'Department reporting tree',
+}: OrgTreeProps) {
   const layout = layoutTree(department)
   const employeesById = new Map(department.employees.map((employee) => [employee.employee_id, employee]))
   const impact = previewImpact ?? department.last_successful_transfer
   const movedIds = new Set(impact?.moved_subtree_ids ?? [])
   const changedIds = new Set(impact?.changed_rollup_ids ?? [])
   const isPreview = previewImpact !== null
+  const isInteractive = !readOnly && onSelect !== undefined
 
   return (
     <div className="org-tree-scroll">
       <svg
         className="org-tree"
-        role="tree"
-        aria-label="Department reporting tree"
+        role={isInteractive ? 'tree' : 'img'}
+        aria-label={ariaLabel}
         viewBox={`-24 -24 ${layout.width + 48} ${layout.height + 48}`}
         preserveAspectRatio="xMidYMin meet"
       >
@@ -56,18 +66,19 @@ export function OrgTree({ department, selectedId, previewImpact, onSelect }: Org
             isPreview && (movedIds.has(employee.employee_id) || changedIds.has(employee.employee_id)) ? 'org-tree__node--preview' : '',
           ].filter(Boolean).join(' ')
           const statusDescription = markers.length > 0 ? `, ${markers.map((marker) => marker.name).join(', ')}` : ''
+          const managerDescription = employee.manager_id === null ? ', root employee' : `, reports to ${employee.manager_id}`
 
           return (
             <g
               key={employee.employee_id}
               className={nodeClassName}
-              role="treeitem"
-              tabIndex={0}
-              aria-selected={employee.employee_id === selectedId}
-              aria-label={`${employee.employee_id}, ${employee.name}, ${employee.team_headcount} headcount, ${formatPayroll(employee.team_payroll)} payroll${statusDescription}`}
+              role={isInteractive ? 'treeitem' : undefined}
+              tabIndex={isInteractive ? 0 : undefined}
+              aria-selected={isInteractive ? employee.employee_id === selectedId : undefined}
+              aria-label={`${employee.employee_id}, ${employee.name}, ${employee.team_headcount} headcount, ${formatPayroll(employee.team_payroll)} payroll${managerDescription}${statusDescription}`}
               transform={`translate(${node.x} ${node.y})`}
-              onClick={() => onSelect(employee.employee_id)}
-              onKeyDown={(event) => selectOnActivation(event, employee.employee_id, onSelect)}
+              onClick={isInteractive ? () => onSelect(employee.employee_id) : undefined}
+              onKeyDown={isInteractive ? (event) => selectOnActivation(event, employee.employee_id, onSelect) : undefined}
             >
               <rect width={NODE_W} height={NODE_H} rx="4" />
               <text className="org-tree__id" x="12" y="20">{employee.employee_id}</text>
