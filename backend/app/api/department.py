@@ -155,7 +155,15 @@ def preview_transfer(request: TransferRequest):
     result = department_service.preview(request.employee_id, request.new_manager_id)
     if isinstance(result, DomainError):
         return _error_response(result)
-    return {"impact": _impact_view(result, state)}
+
+    preview_state = department_service.preview_department(
+        request.employee_id, request.new_manager_id
+    )
+    assert isinstance(preview_state, DepartmentState)
+    return {
+        "impact": _impact_view(result, state),
+        "department": _department_view(preview_state),
+    }
 
 
 @router.post("/department/reset", response_model=DepartmentView)

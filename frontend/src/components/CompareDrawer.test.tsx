@@ -1,8 +1,10 @@
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CompareDrawer } from './CompareDrawer'
 import type { DepartmentView } from '../types/department'
+
+afterEach(() => cleanup())
 
 function departmentWithLeadManager(managerId: 'MGR_A' | 'MGR_C'): DepartmentView {
   return {
@@ -20,13 +22,13 @@ function departmentWithLeadManager(managerId: 'MGR_A' | 'MGR_C'): DepartmentView
 }
 
 describe('CompareDrawer', () => {
-  it('exposes source-ordered original and current reporting relationships', () => {
+  it('exposes source-ordered original and current reporting relationships by default', () => {
     render(
       <CompareDrawer
-        currentDepartment={departmentWithLeadManager('MGR_C')}
+        leftDepartment={departmentWithLeadManager('MGR_A')}
+        rightDepartment={departmentWithLeadManager('MGR_C')}
         isOpen
         onClose={vi.fn()}
-        originalDepartment={departmentWithLeadManager('MGR_A')}
       />,
     )
 
@@ -45,5 +47,24 @@ describe('CompareDrawer', () => {
       'MGR_C reports to HOD.',
       'LEAD_A reports to MGR_C.',
     ])
+  })
+
+  it('supports custom labels and title for non-original/current comparisons', () => {
+    render(
+      <CompareDrawer
+        leftDepartment={departmentWithLeadManager('MGR_A')}
+        rightDepartment={departmentWithLeadManager('MGR_C')}
+        leftLabel="Current"
+        rightLabel="Preview"
+        title="Preview transfer impact"
+        isOpen
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Preview transfer impact' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Current reporting relationships' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Preview reporting relationships' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Original reporting relationships' })).not.toBeInTheDocument()
   })
 })

@@ -63,6 +63,7 @@ export interface TransferResponse {
 
 export interface PreviewTransferResponse {
   impact: TransferImpactView
+  department: DepartmentView
 }
 
 export interface AddEmployeeRequest {

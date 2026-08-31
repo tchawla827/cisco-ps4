@@ -171,7 +171,7 @@ describe('App', () => {
   })
 
   it('reset clears transfer and preview state while returning selection to the root', async () => {
-    mockedPreviewTransfer.mockResolvedValue({ impact: transferImpact })
+    mockedPreviewTransfer.mockResolvedValue({ impact: transferImpact, department: transferredDepartment })
     mockedResetDepartment.mockResolvedValue(loadedDepartment)
     await renderLoadedApp(transferredDepartment)
 
@@ -240,5 +240,65 @@ describe('collapsible layout and roster controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('Employee has direct reports and cannot be deleted')).toBeInTheDocument()
+  })
+})
+
+describe('preview compare drawer', () => {
+  it('auto-opens showing Current vs Preview when a transfer is staged', async () => {
+    mockedPreviewTransfer.mockResolvedValue({ impact: transferImpact, department: transferredDepartment })
+    await renderLoadedApp()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Valid preset' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+
+    await screen.findByText('Preview only')
+    expect(screen.getByRole('heading', { name: 'Preview transfer impact' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Current' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Preview' })).toBeInTheDocument()
+  })
+
+  it('closing the drawer hides it without discarding the staged preview', async () => {
+    mockedPreviewTransfer.mockResolvedValue({ impact: transferImpact, department: transferredDepartment })
+    await renderLoadedApp()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Valid preset' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    await screen.findByText('Preview only')
+
+    fireEvent.click(screen.getByTitle('Close comparison'))
+
+    expect(screen.queryByRole('heading', { name: 'Preview transfer impact' })).not.toBeInTheDocument()
+    expect(screen.getByText('Preview only')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled()
+  })
+
+  it('reopens on the next staged preview even after a manual dismissal', async () => {
+    mockedPreviewTransfer.mockResolvedValue({ impact: transferImpact, department: transferredDepartment })
+    await renderLoadedApp()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Valid preset' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    await screen.findByText('Preview only')
+    fireEvent.click(screen.getByTitle('Close comparison'))
+    expect(screen.queryByRole('heading', { name: 'Preview transfer impact' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+
+    expect(await screen.findByRole('heading', { name: 'Preview transfer impact' })).toBeInTheDocument()
+  })
+
+  it('closes automatically once the transfer is applied', async () => {
+    mockedPreviewTransfer.mockResolvedValue({ impact: transferImpact, department: transferredDepartment })
+    mockedTransfer.mockResolvedValue({ department: transferredDepartment, impact: transferImpact })
+    await renderLoadedApp()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Valid preset' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    await screen.findByRole('heading', { name: 'Preview transfer impact' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    await screen.findByText('Transfer applied to the current department.')
+    expect(screen.queryByRole('heading', { name: 'Preview transfer impact' })).not.toBeInTheDocument()
   })
 })

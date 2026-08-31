@@ -5,10 +5,14 @@ import type { DepartmentView } from '../types/department'
 import { OrgTree } from './OrgTree'
 
 interface CompareDrawerProps {
-  currentDepartment: DepartmentView
+  leftDepartment: DepartmentView
+  rightDepartment: DepartmentView
   isOpen: boolean
   onClose: () => void
-  originalDepartment: DepartmentView
+  leftLabel?: string
+  rightLabel?: string
+  title?: string
+  eyebrow?: string
 }
 
 function trapDrawerFocus(event: KeyboardEvent<HTMLElement>, closeButton: HTMLButtonElement | null) {
@@ -35,7 +39,16 @@ function ReportingRelationships({ department, label }: { department: DepartmentV
   )
 }
 
-export function CompareDrawer({ currentDepartment, isOpen, onClose, originalDepartment }: CompareDrawerProps) {
+export function CompareDrawer({
+  leftDepartment,
+  rightDepartment,
+  isOpen,
+  onClose,
+  leftLabel = 'Original',
+  rightLabel = 'Current',
+  title = 'Compare organisation charts',
+  eyebrow = 'DEPARTMENT SNAPSHOT',
+}: CompareDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
 
@@ -75,8 +88,8 @@ export function CompareDrawer({ currentDepartment, isOpen, onClose, originalDepa
       >
         <header className="compare-drawer__header">
           <div>
-            <span className="compare-drawer__eyebrow">DEPARTMENT SNAPSHOT</span>
-            <h2 id="compare-drawer-title">Compare organisation charts</h2>
+            <span className="compare-drawer__eyebrow">{eyebrow}</span>
+            <h2 id="compare-drawer-title">{title}</h2>
           </div>
           <button
             ref={closeButtonRef}
@@ -97,15 +110,15 @@ export function CompareDrawer({ currentDepartment, isOpen, onClose, originalDepa
         </div>
 
         <div className="compare-drawer__trees">
-          <section className="compare-tree" aria-labelledby="compare-original-heading">
-            <h3 id="compare-original-heading">Original</h3>
-            <ReportingRelationships department={originalDepartment} label="Original" />
-            <OrgTree department={originalDepartment} readOnly ariaLabel="Original department reporting tree" />
+          <section className="compare-tree" aria-labelledby="compare-left-heading">
+            <h3 id="compare-left-heading">{leftLabel}</h3>
+            <ReportingRelationships department={leftDepartment} label={leftLabel} />
+            <OrgTree department={leftDepartment} readOnly ariaLabel={`${leftLabel} department reporting tree`} />
           </section>
-          <section className="compare-tree" aria-labelledby="compare-current-heading">
-            <h3 id="compare-current-heading">Current</h3>
-            <ReportingRelationships department={currentDepartment} label="Current" />
-            <OrgTree department={currentDepartment} readOnly ariaLabel="Current department reporting tree" />
+          <section className="compare-tree" aria-labelledby="compare-right-heading">
+            <h3 id="compare-right-heading">{rightLabel}</h3>
+            <ReportingRelationships department={rightDepartment} label={rightLabel} />
+            <OrgTree department={rightDepartment} readOnly ariaLabel={`${rightLabel} department reporting tree`} />
           </section>
         </div>
       </aside>

@@ -40,6 +40,8 @@ function App() {
   const [transferEmployeeId, setTransferEmployeeId] = useState('')
   const [newManagerId, setNewManagerId] = useState('')
   const [previewImpact, setPreviewImpact] = useState<TransferImpactView | null>(null)
+  const [previewDepartment, setPreviewDepartment] = useState<DepartmentView | null>(null)
+  const [previewCompareDismissed, setPreviewCompareDismissed] = useState(false)
   const [banner, setBanner] = useState<BannerMessage | null>(null)
   const [loading, setLoading] = useState(false)
   const [compareOpen, setCompareOpen] = useState(false)
@@ -58,6 +60,8 @@ function App() {
     setDepartment(null)
     setOriginalDepartment(null)
     setPreviewImpact(null)
+    setPreviewDepartment(null)
+    setPreviewCompareDismissed(false)
     setSelectedId(null)
     setTransferEmployeeId('')
     setNewManagerId('')
@@ -77,6 +81,8 @@ function App() {
       setTransferEmployeeId('')
       setNewManagerId('')
       setPreviewImpact(null)
+      setPreviewDepartment(null)
+      setPreviewCompareDismissed(false)
       setCompareOpen(false)
       setCollapsedNodeIds(new Set())
       setPendingDrop(null)
@@ -98,6 +104,8 @@ function App() {
       setTransferEmployeeId('')
       setNewManagerId('')
       setPreviewImpact(null)
+      setPreviewDepartment(null)
+      setPreviewCompareDismissed(false)
       setCompareOpen(false)
       setCollapsedNodeIds(new Set())
       setPendingDrop(null)
@@ -114,9 +122,12 @@ function App() {
     try {
       const response = await previewTransfer(employeeId, managerId)
       setPreviewImpact(response.impact)
+      setPreviewDepartment(response.department)
+      setPreviewCompareDismissed(false)
       setBanner({ kind: 'success', message: 'Transfer preview is ready for review.' })
     } catch (error) {
       setPreviewImpact(null)
+      setPreviewDepartment(null)
       setBanner(messageFromError(error, 'Unable to preview this transfer.'))
     } finally {
       setLoading(false)
@@ -134,10 +145,12 @@ function App() {
       const response = await transfer(employeeId, managerId)
       setDepartment(response.department)
       setPreviewImpact(null)
+      setPreviewDepartment(null)
       setSelectedId(response.impact.employee_id)
       setBanner({ kind: 'success', message: 'Transfer applied to the current department.' })
     } catch (error) {
       setPreviewImpact(null)
+      setPreviewDepartment(null)
       setBanner(messageFromError(error, 'Transfer was not applied.'))
     } finally {
       setLoading(false)
@@ -152,17 +165,20 @@ function App() {
   const handleTransferEmployeeIdChange = (employeeId: string) => {
     setTransferEmployeeId(employeeId)
     setPreviewImpact(null)
+    setPreviewDepartment(null)
   }
 
   const handleNewManagerIdChange = (managerId: string) => {
     setNewManagerId(managerId)
     setPreviewImpact(null)
+    setPreviewDepartment(null)
   }
 
   const loadTransferPreset = (employeeId: string, managerId: string) => {
     setTransferEmployeeId(employeeId)
     setNewManagerId(managerId)
     setPreviewImpact(null)
+    setPreviewDepartment(null)
     setBanner({ kind: 'success', message: `Staged ${employeeId} → ${managerId}.` })
   }
 
@@ -199,6 +215,7 @@ function App() {
   const handleCancelDrop = () => {
     setPendingDrop(null)
     setPreviewImpact(null)
+    setPreviewDepartment(null)
   }
 
   const handleToggleCollapseNode = (employeeId: string) => {
@@ -216,6 +233,7 @@ function App() {
       const updated = await addEmployee(request)
       setDepartment(updated)
       setPreviewImpact(null)
+      setPreviewDepartment(null)
       setBanner({ kind: 'success', message: `Added ${request.employee_id}.` })
     } catch (error) {
       setBanner(messageFromError(error, 'Unable to add employee.'))
@@ -231,6 +249,7 @@ function App() {
       const updated = await deleteEmployee(employeeId)
       setDepartment(updated)
       setPreviewImpact(null)
+      setPreviewDepartment(null)
       setSelectedId((current) => (current === employeeId ? updated.root_id : current))
       setBanner({ kind: 'success', message: `Deleted ${employeeId}.` })
     } catch (error) {
@@ -342,10 +361,22 @@ function App() {
       ) : null}
       {department && originalDepartment ? (
         <CompareDrawer
-          currentDepartment={department}
-          originalDepartment={originalDepartment}
+          leftDepartment={originalDepartment}
+          rightDepartment={department}
           isOpen={compareOpen}
           onClose={() => setCompareOpen(false)}
+        />
+      ) : null}
+      {department && previewDepartment ? (
+        <CompareDrawer
+          leftDepartment={department}
+          rightDepartment={previewDepartment}
+          leftLabel="Current"
+          rightLabel="Preview"
+          title="Preview transfer impact"
+          eyebrow="TRANSFER PREVIEW"
+          isOpen={!previewCompareDismissed}
+          onClose={() => setPreviewCompareDismissed(true)}
         />
       ) : null}
     </main>

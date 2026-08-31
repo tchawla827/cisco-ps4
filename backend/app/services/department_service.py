@@ -89,6 +89,26 @@ class DepartmentService:
         _, impact = result
         return impact
 
+    def preview_department(
+        self, employee_id: str, new_manager_id: str
+    ) -> DepartmentState | DomainError:
+        """Return the full candidate state a transfer would produce, without committing it."""
+        result = self._compute_transfer(employee_id, new_manager_id)
+        if isinstance(result, DomainError):
+            return result
+
+        candidate, _impact = result
+        candidate_tree = build_tree(candidate)
+        rollups = calculate_rollups(candidate_tree)
+        assert self._loaded_scenario is not None
+        return DepartmentState(
+            scenario_key=self._loaded_scenario.key,
+            employees=candidate,
+            tree=candidate_tree,
+            rollups=rollups,
+            last_successful_transfer=self._last_successful_transfer,
+        )
+
     def reset(self) -> DepartmentState | None:
         if self._original_employees is None:
             return None

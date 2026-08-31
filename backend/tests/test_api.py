@@ -196,12 +196,50 @@ def test_preview_returns_impact_without_mutating_department(client: TestClient) 
     )
 
     assert response.status_code == 200
-    assert set(response.json()) == {"impact"}
+    assert set(response.json()) == {"impact", "department"}
     assert response.json()["impact"]["changed_rollup_ids"] == ["MGR_A", "MGR_C"]
     after = client.get("/api/department")
     assert after.status_code == 200
     assert after.json() == before
     assert after.json()["last_successful_transfer"] is None
+
+
+def test_preview_department_field_reflects_the_candidate_post_transfer_state(
+    client: TestClient,
+) -> None:
+    load_main(client)
+
+    response = client.post(
+        "/api/department/transfer/preview",
+        json={"employee_id": "LEAD_A", "new_manager_id": "MGR_C"},
+    )
+
+    assert response.status_code == 200
+    preview_department = response.json()["department"]
+    employees_by_id = {employee["employee_id"]: employee for employee in preview_department["employees"]}
+    assert employees_by_id["LEAD_A"]["manager_id"] == "MGR_C"
+    assert employees_by_id["MGR_A"]["team_headcount"] == 2
+    assert employees_by_id["MGR_A"]["team_payroll"] == 137_000
+    assert employees_by_id["MGR_C"]["team_headcount"] == 5
+    assert employees_by_id["MGR_C"]["team_payroll"] == 262_000
+    assert employees_by_id["HOD"]["team_headcount"] == 12
+    assert employees_by_id["HOD"]["team_payroll"] == 821_000
+    assert preview_department["last_successful_transfer"] is None
+    after = client.get("/api/department")
+    assert after.json()["employees"][4]["manager_id"] == "MGR_A"
+
+
+def test_preview_transfer_rejection_returns_error_without_department_field(
+    client: TestClient,
+) -> None:
+    load_main(client)
+
+    response = client.post(
+        "/api/department/transfer/preview",
+        json={"employee_id": "MGR_A", "new_manager_id": "E3"},
+    )
+
+    assert_error(response, 400, "MANAGEMENT_CYCLE")
 
 
 def test_reset_restores_initial_state_and_reapplication_is_deterministic(

@@ -235,3 +235,45 @@ def test_add_then_delete_clears_stale_transfer_impact() -> None:
 
     assert isinstance(result, DepartmentState)
     assert result.last_successful_transfer is None
+
+
+def test_preview_department_returns_full_candidate_state_without_mutating() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+    fields_before = (
+        service._original_employees,
+        service._current_employees,
+        service._last_successful_transfer,
+        service._loaded_scenario,
+    )
+
+    result = service.preview_department("LEAD_A", "MGR_C")
+
+    assert isinstance(result, DepartmentState)
+    assert result.scenario_key == "main-12"
+    assert result.rollups == POST_TRANSFER_ROLLUPS
+    assert [employee.employee_id for employee in result.employees] == list(INITIAL_ROLLUPS)
+    assert result.last_successful_transfer is None
+    assert all(
+        after is before
+        for after, before in zip(
+            (
+                service._original_employees,
+                service._current_employees,
+                service._last_successful_transfer,
+                service._loaded_scenario,
+            ),
+            fields_before,
+        )
+    )
+    assert assert_state(service).rollups == INITIAL_ROLLUPS
+
+
+def test_preview_department_rejects_the_same_rules_as_transfer() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    error = service.preview_department("MGR_A", "E3")
+
+    assert getattr(error, "code", None) == MANAGEMENT_CYCLE
+    assert assert_state(service).rollups == INITIAL_ROLLUPS
