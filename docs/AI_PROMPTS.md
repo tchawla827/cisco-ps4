@@ -24,3 +24,10 @@ the source problem statement and found consistent — no edits needed. Added
 `docs/PLAN.md` (5-stage plan with checkpoints), `docs/EXPECTED_RESULTS.md`
 (independent 12-employee oracle, hand-derived before any code exists),
 `docs/DESIGN_NOTES.md`, `docs/TEST_EVIDENCE.md`, `README.md`, and `CLAUDE.md`.
+
+### 2026-08-31 — Step 2 load validation
+**Prompt:** Implement the pure six-pass department-load validation pipeline
+test-first, preserving pass and source order, frozen `Employee`, and avoiding
+`sorted()` in domain and service code.
+**Outcome:** accepted. Added the validator plus only the minimal validated-input
+tree builder required by defensive pass 6; full tree behavior remains Step 3.

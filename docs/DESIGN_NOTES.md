@@ -21,3 +21,14 @@ refines, tests, or deviates from those decisions. Append chronologically.
 
 (none yet — add dated entries here as implementation surfaces trade-offs,
 ambiguities resolved one way vs. another, or deviations from `PLAN.md`)
+
+### 2026-08-31 — D1 frozen dataclass validation fixtures
+`Employee` remains a frozen dataclass. Its annotations intentionally do not
+perform runtime coercion or rejection, which keeps the domain pure and permits
+invalid field fixtures to reach validation pass 1 unchanged.
+
+### 2026-08-31 — Validation ordering contract
+Load validation is a six-pass first-error contract: fields, duplicates, root
+count, manager references, cycles, then defensive connectivity. Records are
+examined in source order within every pass; manager-reference checks share one
+loop so an earlier unknown manager precedes a later self-manager.
