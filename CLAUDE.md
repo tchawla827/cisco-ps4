@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `backend/` (FastAPI + pure-Python domain engine) and `frontend/` (React +
 TypeScript + Vite) are fully built: 108 backend tests (`pytest`) and 38
-frontend tests (`vitest`) pass, the frontend build and lint are clean, and
+frontend tests (`vitest`) pass, the frontend build and lint exit successfully
+(lint reports one expected Fast Refresh warning), and
 the full demo (load → valid cross-branch transfer → cycle/root-move
 rejection → reset → deterministic reapply) has been verified live against
 `docs/EXPECTED_RESULTS.md`. See `docs/TEST_EVIDENCE.md` for the evidence and

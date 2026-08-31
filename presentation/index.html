@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Departmental Reorg Payroll Rollup Tracker</title>
+  <style>
+    :root {
+      --ink: #0b1e2d;
+      --ink-soft: #16364b;
+      --paper: #f6f1e7;
+      --paper-deep: #e8e0d2;
+      --teal: #49b8a6;
+      --amber: #efb860;
+      --coral: #e06f62;
+      --mist: #b8c8d1;
+      --line: rgba(246, 241, 231, .22);
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --display: Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #07131e; color: var(--paper); font-family: var(--sans); }
+    button { font: inherit; }
+    .skip { position: fixed; left: 18px; top: -60px; z-index: 20; background: var(--paper); color: var(--ink); padding: 10px 14px; border-radius: 6px; }
+    .skip:focus { top: 18px; }
+
+    .deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+    .slide {
+      position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr auto;
+      width: 100%; height: 100%; padding: clamp(28px, 5vw, 74px); opacity: 0; pointer-events: none;
+      transform: translateX(18px); transition: opacity .32s ease, transform .32s ease; overflow: hidden;
+    }
+    .slide.active { opacity: 1; pointer-events: auto; transform: none; }
+    .slide::after { content: ""; position: absolute; width: 42vw; height: 42vw; right: -18vw; bottom: -31vw; border: 1px solid rgba(73,184,166,.17); border-radius: 50%; pointer-events: none; }
+    .dark { background: var(--ink); }
+    .paper { background: var(--paper); color: var(--ink); }
+    .paper::after { border-color: rgba(11,30,45,.13); }
+
+    .topline, .footer { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; }
+    .eyebrow, .page, .label { font: 700 clamp(10px, 1.1vw, 15px)/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow { color: var(--teal); }
+    .paper .eyebrow { color: #197e78; }
+    .page { color: var(--mist); }
+    .paper .page { color: #557082; }
+    .footer { font-size: clamp(10px, 1.1vw, 15px); color: var(--mist); }
+    .paper .footer { color: #557082; }
+    .footer strong { color: inherit; font-weight: 650; }
+
+    .content { position: relative; z-index: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+    h1, h2, p { margin: 0; }
+    h1 { max-width: 1000px; font: 500 clamp(46px, 6.6vw, 104px)/.98 var(--display); letter-spacing: -.045em; }
+    h2 { max-width: 1000px; font: 500 clamp(38px, 5.15vw, 80px)/1 var(--display); letter-spacing: -.04em; }
+    .accent { color: var(--teal); }
+    .paper .accent { color: #1c8981; }
+    .subhead { max-width: 680px; margin-top: 24px; font-size: clamp(16px, 1.72vw, 26px); line-height: 1.48; color: var(--mist); }
+    .paper .subhead { color: #486173; }
+    .rule { width: min(660px, 70%); height: 2px; margin: 30px 0; background: linear-gradient(90deg, var(--teal) 0 33%, var(--amber) 33% 66%, transparent 66%); }
+
+    .route { position: absolute; pointer-events: none; opacity: .96; }
+    .route path { fill: none; stroke: var(--teal); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .route .amber { stroke: var(--amber); }
+    .route circle { fill: var(--paper); stroke: var(--teal); stroke-width: 2; }
+    .paper .route circle { fill: var(--paper); }
+    .route.hero-route { width: min(87vw, 1300px); height: 170px; bottom: 12%; right: 4%; }
+    .route.small-route { width: 50%; height: 140px; bottom: 8%; right: 5%; opacity: .48; }
+
+    .hero-grid { display: grid; grid-template-columns: 1.45fr .85fr; align-items: end; gap: 48px; }
+    .metric-stack { padding: 28px 0 12px 30px; border-left: 1px solid var(--line); }
+    .paper .metric-stack { border-color: rgba(11,30,45,.18); }
+    .metric { margin-bottom: 24px; }
+    .metric:last-child { margin-bottom: 0; }
+    .metric b { display: block; font: 500 clamp(33px, 4.3vw, 64px)/1 var(--display); letter-spacing: -.05em; color: var(--paper); }
+    .paper .metric b { color: var(--ink); }
+    .metric span { display: block; margin-top: 5px; font-size: clamp(12px, 1.15vw, 16px); color: var(--mist); }
+    .paper .metric span { color: #486173; }
+
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin-top: 40px; align-items: stretch; }
+    .flow-step { padding: 18px clamp(13px, 1.8vw, 27px); border-left: 1px solid var(--line); min-height: 180px; }
+    .flow-step:first-child { border-left: 0; }
+    .flow-step b { display: block; font-size: clamp(17px, 1.65vw, 24px); line-height: 1.1; margin: 14px 0 9px; }
+    .flow-step p { color: var(--mist); font-size: clamp(12px, 1.15vw, 16px); line-height: 1.4; }
+    .step-no { font: 700 12px var(--mono); color: var(--teal); letter-spacing: .08em; }
+    .commit { background: rgba(73,184,166,.12); border-left-color: var(--teal); }
+    .reject { background: rgba(224,111,98,.10); }
+    .reject .step-no { color: var(--coral); }
+
+    .arch { display: grid; grid-template-columns: .92fr 1.08fr; gap: clamp(28px, 4vw, 68px); align-items: center; margin-top: 28px; }
+    .arch-copy { padding-right: 12px; }
+    .arch-copy h2 { max-width: 590px; }
+    .arch-copy p { margin-top: 22px; max-width: 500px; color: #486173; font-size: clamp(15px, 1.4vw, 21px); line-height: 1.48; }
+    .arch-diagram { display: grid; grid-template-columns: 1fr 66px 1fr; grid-template-rows: 74px 54px 122px 54px 100px; align-items: center; text-align: center; }
+    .node { padding: 17px 13px; border: 1px solid rgba(11,30,45,.28); background: rgba(255,255,255,.42); font-weight: 650; line-height: 1.1; font-size: clamp(13px, 1.3vw, 19px); }
+    .node small { display: block; font: 500 11px/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: #557082; margin-top: 6px; }
+    .node.ui { grid-column: 1; grid-row: 1; } .node.api { grid-column: 3; grid-row: 1; }
+    .node.service { grid-column: 1 / 4; grid-row: 3; background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .node.service small { color: var(--teal); }
+    .node.domain { grid-column: 1; grid-row: 5; } .node.state { grid-column: 3; grid-row: 5; }
+    .connector { border-color: #7b8d98; border-style: solid; }
+    .hline { grid-column: 2; grid-row: 1; border-top-width: 1px; }
+    .vleft1 { grid-column: 1; grid-row: 2; justify-self: center; height: 100%; border-left-width: 1px; }
+    .vright1 { grid-column: 3; grid-row: 2; justify-self: center; height: 100%; border-left-width: 1px; }
+    .vleft2 { grid-column: 1; grid-row: 4; justify-self: center; height: 100%; border-left-width: 1px; }
+    .vright2 { grid-column: 3; grid-row: 4; justify-self: center; height: 100%; border-left-width: 1px; }
+
+    .decision-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 34px; }
+    .decision { padding: clamp(18px, 2.1vw, 30px); background: rgba(255,255,255,.035); border-top: 3px solid var(--teal); }
+    .decision:nth-child(2) { border-color: var(--amber); } .decision:nth-child(3) { border-color: #6e9cc0; } .decision:nth-child(4) { border-color: var(--coral); }
+    .decision h3 { margin: 0 0 10px; font-size: clamp(17px, 1.7vw, 24px); line-height: 1.12; }
+    .decision p { color: var(--mist); font-size: clamp(12px, 1.14vw, 16px); line-height: 1.42; }
+    .trade { margin-top: 22px; display: flex; align-items: center; gap: 12px; color: var(--mist); font-size: clamp(13px, 1.28vw, 18px); }
+    .trade b { color: var(--paper); }
+
+    .proof { display: grid; grid-template-columns: 1fr 1.06fr; gap: clamp(30px, 5vw, 80px); align-items: center; }
+    .proof h2 { max-width: 600px; }
+    .proof-card { padding: clamp(25px, 3vw, 45px); background: var(--ink); color: var(--paper); box-shadow: 15px 15px 0 var(--paper-deep); }
+    .proof-card > p { margin: 14px 0 25px; color: var(--mist); line-height: 1.45; font-size: clamp(14px, 1.35vw, 19px); }
+    .evidence { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .evidence div { border-top: 1px solid rgba(246,241,231,.32); padding-top: 12px; }
+    .evidence b { display: block; color: var(--teal); font: 500 clamp(25px, 3.2vw, 46px)/1 var(--display); letter-spacing: -.05em; }
+    .evidence span { display: block; margin-top: 6px; color: var(--mist); font-size: clamp(11px, 1.1vw, 15px); }
+    .ai-list { list-style: none; padding: 0; margin: 27px 0 0; display: grid; gap: 13px; }
+    .ai-list li { padding-left: 25px; position: relative; font-size: clamp(14px, 1.3vw, 19px); line-height: 1.35; }
+    .ai-list li::before { content: ""; position: absolute; left: 0; top: .49em; width: 11px; height: 11px; border: 2px solid var(--teal); border-radius: 50%; }
+    .close { margin-top: 25px; font: 500 clamp(17px, 1.8vw, 27px)/1.15 var(--display); letter-spacing: -.025em; }
+
+    .nav { position: fixed; z-index: 10; right: 24px; bottom: 18px; display: flex; align-items: center; gap: 9px; }
+    .nav button { width: 40px; height: 40px; color: var(--paper); background: rgba(246,241,231,.09); border: 1px solid rgba(246,241,231,.28); border-radius: 50%; cursor: pointer; font-size: 22px; line-height: 1; }
+    .nav button:hover { background: rgba(246,241,231,.19); }
+    .nav button:focus-visible, .skip:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .counter { min-width: 50px; text-align: center; font: 700 12px var(--mono); color: var(--mist); }
+    .progress { position: fixed; z-index: 10; left: 0; top: 0; height: 4px; width: 20%; background: var(--teal); transition: width .3s ease; }
+
+    @media (min-aspect-ratio: 16/9) { .deck { width: min(100vw, 177.777vh); height: min(100vh, 56.25vw); margin: auto; } }
+    @media (max-width: 760px), (max-aspect-ratio: 4/3) {
+      html, body { overflow: auto; } .deck { height: 100svh; } .slide { padding: 28px 24px 70px; }
+      .hero-grid, .proof, .arch { grid-template-columns: 1fr; gap: 25px; } .metric-stack { display: flex; gap: 18px; padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); } .metric { margin: 0; }
+      .flow { grid-template-columns: 1fr 1fr; margin-top: 25px; } .flow-step { min-height: auto; border-top: 1px solid var(--line); } .flow-step:nth-child(odd) { border-left: 0; }
+      .decision-grid { grid-template-columns: 1fr; gap: 10px; margin-top: 20px; } .decision:nth-child(n+3) { display: none; } .arch-diagram { transform: scale(.82); transform-origin: top center; margin: -28px -8% -35px; }
+      .proof-card { box-shadow: 8px 8px 0 var(--paper-deep); } .route.hero-route { width: 125%; right: -22%; bottom: 5%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#slide-content">Skip to slide content</a>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <main class="deck" aria-live="polite" aria-label="Departmental Reorg Payroll Rollup Tracker presentation">
+    <section class="slide dark active" aria-roledescription="slide" aria-label="Slide 1 of 5: Problem and solution">
+      <div class="topline"><span class="eyebrow">Cisco AI-assisted coding interview</span><span class="page">01 / 05</span></div>
+      <div class="content hero-grid" id="slide-content">
+        <div>
+          <h1>Test a reporting-line change <span class="accent">before it changes the team.</span></h1>
+          <p class="subhead">The assignment: take a flat employee list, validate one reporting tree, calculate each team’s headcount and payroll, and reject illegal moves without changing the current department.</p>
+          <div class="rule"></div>
+          <p class="label">A local, interview-scale decision tool</p>
+        </div>
+        <div class="metric-stack" aria-label="Key project figures">
+          <div class="metric"><b>12</b><span>employees in the demo</span></div>
+          <div class="metric"><b>₹821K</b><span>root team monthly payroll</span></div>
+          <div class="metric"><b>0</b><span>state changes on rejection</span></div>
+        </div>
+      </div>
+      <div class="footer"><span>Problem: hierarchy and payroll are not visible in a flat list</span><strong>Reorg Tracker</strong></div>
+      <svg class="route hero-route" viewBox="0 0 1300 170" aria-hidden="true"><path d="M20 118 H360 V58 H690 V118 H1010 V42 H1270"/><path class="amber" d="M690 118 H1010"/><circle cx="20" cy="118" r="7"/><circle cx="360" cy="58" r="7"/><circle cx="690" cy="118" r="7"/><circle cx="1010" cy="42" r="7"/><circle cx="1270" cy="42" r="7"/></svg>
+    </section>
+
+    <section class="slide dark" aria-roledescription="slide" aria-label="Slide 2 of 5: Approach">
+      <div class="topline"><span class="eyebrow">Approach</span><span class="page">02 / 05</span></div>
+      <div class="content">
+        <h2>Build the rules first. Then build the <span class="accent">experience</span> around them.</h2>
+        <div class="flow" aria-label="Transfer processing flow">
+          <div class="flow-step"><span class="step-no">01</span><b>Model inputs</b><p>Keep ordered employee records as the source of truth.</p></div>
+          <div class="flow-step"><span class="step-no">02</span><b>Test rules</b><p>Write tests for validation order, cycles, rollups, and source order.</p></div>
+          <div class="flow-step"><span class="step-no">03</span><b>Derive state</b><p>Build the tree and calculate team totals on the backend.</p></div>
+          <div class="flow-step commit"><span class="step-no">04</span><b>Try a move</b><p>Build a candidate copy, validate it, then recompute every rollup.</p></div>
+          <div class="flow-step reject"><span class="step-no">05</span><b>Show result</b><p>Commit a valid candidate or return a clear error with no state change.</p></div>
+        </div>
+        <div class="trade"><span class="label">Demo move</span><b>`LEAD_A → MGR_C`</b><span>moves a 3-person / ₹145K subtree; only `MGR_A` and `MGR_C` rollups change.</span></div>
+      </div>
+      <div class="footer"><span>Core rule: validate → candidate → recompute → commit</span><strong>React only displays server results</strong></div>
+      <svg class="route small-route" viewBox="0 0 700 140" aria-hidden="true"><path d="M5 110 H150 V45 H330 V110 H520 V20 H690"/><path class="amber" d="M330 110 H520"/></svg>
+    </section>
+
+    <section class="slide paper" aria-roledescription="slide" aria-label="Slide 3 of 5: Architecture">
+      <div class="topline"><span class="eyebrow">Architecture</span><span class="page">03 / 05</span></div>
+      <div class="content arch">
+        <div class="arch-copy"><h2>One place calculates the answer.</h2><p>React handles selection, forms, and display. FastAPI exposes the local API. The service coordinates the workflow. Pure Python code owns validation, hierarchy, payroll, and transfer rules.</p><div class="rule"></div><p class="label">The UI never decides whether a move is valid</p></div>
+        <div class="arch-diagram" aria-label="React UI and FastAPI API connect to DepartmentService, which uses pure domain functions and in-memory state">
+          <div class="node ui">React UI<small>selection · staging · display</small></div><div class="connector hline"></div><div class="node api">FastAPI<small>JSON routes · response views</small></div>
+          <div class="connector vleft1"></div><div class="connector vright1"></div><div class="node service">DepartmentService<small>load · preview · transfer · reset · roster</small></div>
+          <div class="connector vleft2"></div><div class="connector vright2"></div><div class="node domain">Pure domain<small>validate · tree · rollups · transfer</small></div><div class="node state">In-memory state<small>original · current · last impact</small></div>
+        </div>
+      </div>
+      <div class="footer"><span>One source of truth for the result shown and the change committed</span><strong>Small, testable boundaries</strong></div>
+    </section>
+
+    <section class="slide dark" aria-roledescription="slide" aria-label="Slide 4 of 5: Design choices and trade-offs">
+      <div class="topline"><span class="eyebrow">Engineering choices</span><span class="page">04 / 05</span></div>
+      <div class="content">
+        <h2>The main choices, and <span class="accent">why I made them.</span></h2>
+        <div class="decision-grid">
+          <article class="decision"><h3>Flat list, derived tree</h3><p>A transfer changes one manager ID. Rebuilding avoids keeping a list and nested tree in sync.</p></article>
+          <article class="decision"><h3>Recompute all rollups</h3><p>The limit is 30 employees. O(n) work is simpler and safer than patching ancestor chains.</p></article>
+          <article class="decision"><h3>Compare real values</h3><p>I compare before/after rollups. That does not incorrectly mark the shared root as changed.</p></article>
+          <article class="decision"><h3>Keep it local</h3><p>No database or login. Reset is deterministic; persistence and concurrency are deliberately out of scope.</p></article>
+        </div>
+      </div>
+      <div class="footer"><span>Trade-off: process-local state, no multi-user isolation</span><strong>Benefit: less code around the core problem</strong></div>
+    </section>
+
+    <section class="slide paper" aria-roledescription="slide" aria-label="Slide 5 of 5: AI use and verification">
+      <div class="topline"><span class="eyebrow">AI use + verification</span><span class="page">05 / 05</span></div>
+      <div class="content proof">
+        <div><h2>AI was part of the workflow, not the <span class="accent">decision maker.</span></h2><ul class="ai-list"><li><b>Skills:</b> used brainstorming, TDD, debugging, design, and verification workflows to shape each task.</li><li><b>Subagents:</b> split independent, bounded work; reviewed integration and kept the final call at the main boundary.</li><li><b>Test-driven work:</b> wrote rule tests first, then checked API, UI, build, and the demo path.</li></ul><p class="close">AI proposed. I chose, integrated, and verified.</p></div>
+        <aside class="proof-card" aria-label="Verification evidence"><p class="label">How I checked the result</p><p>The high-risk behaviors are validation order, exact payroll impact, and state staying unchanged after a rejected move.</p><div class="evidence"><div><b>108</b><span>backend tests passed</span></div><div><b>38</b><span>frontend tests passed</span></div><div><b>✓</b><span>frontend build and lint exit 0</span></div><div><b>✓</b><span>live API: HOD / 12 / ₹821K</span></div></div></aside>
+      </div>
+      <div class="footer"><span>Live demo: valid `LEAD_A → MGR_C`, then rejected `MGR_A → E3`</span><strong>Thank you</strong></div>
+    </section>
+  </main>
+  <nav class="nav" aria-label="Presentation controls"><button type="button" id="previous" aria-label="Previous slide">←</button><span class="counter" id="counter" aria-live="off">1 / 5</span><button type="button" id="next" aria-label="Next slide">→</button></nav>
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    const progress = document.querySelector('#progress');
+    const counter = document.querySelector('#counter');
+    let current = 0;
+    function show(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+    }
+    document.querySelector('#next').addEventListener('click', () => show(current + 1));
+    document.querySelector('#previous').addEventListener('click', () => show(current - 1));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') { event.preventDefault(); show(current + 1); }
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp') { event.preventDefault(); show(current - 1); }
+      if (event.key === 'Home') { event.preventDefault(); show(0); }
+      if (event.key === 'End') { event.preventDefault(); show(slides.length - 1); }
+    });
+    show(0);
+  </script>
+</body>
+</html>
