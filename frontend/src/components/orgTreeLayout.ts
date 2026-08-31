@@ -24,7 +24,10 @@ export interface TreeLayout {
   height: number
 }
 
-export function layoutTree(department: DepartmentView): TreeLayout {
+export function layoutTree(
+  department: DepartmentView,
+  collapsedIds: ReadonlySet<string> = new Set(),
+): TreeLayout {
   const employeesById = new Map(department.employees.map((employee) => [employee.employee_id, employee]))
   const positions = new Map<string, TreeNodePosition>()
   const orderedIds: string[] = []
@@ -36,7 +39,8 @@ export function layoutTree(department: DepartmentView): TreeLayout {
     const employee = employeesById.get(id)
     if (!employee) return null
 
-    const childPositions = employee.children_ids
+    const childIds = collapsedIds.has(id) ? [] : employee.children_ids
+    const childPositions = childIds
       .map((childId) => placeNode(childId, depth + 1))
       .filter((position): position is TreeNodePosition => position !== null)
     const x = childPositions.length === 0

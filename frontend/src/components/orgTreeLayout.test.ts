@@ -59,4 +59,23 @@ describe('layoutTree', () => {
       path: 'M 414,88 V 114 H 90 V 140',
     })
   })
+
+  it('excludes a collapsed node\'s descendants and recompacts siblings', () => {
+    const collapsed = layoutTree(department, new Set(['MGR_A']))
+    const ids = collapsed.nodes.map((node) => node.id)
+
+    expect(ids).toContain('MGR_A')
+    expect(ids).not.toContain('LEAD_A')
+    expect(ids).not.toContain('E1')
+    expect(ids).not.toContain('E2')
+    expect(collapsed.edges.some((edge) => edge.parentId === 'MGR_A')).toBe(false)
+
+    const byId = new Map(collapsed.nodes.map((node) => [node.id, node]))
+    const xOf = (id: string): number => {
+      const node = byId.get(id)
+      if (node === undefined) throw new Error(`Expected ${id} to be positioned`)
+      return node.x
+    }
+    expect(['MGR_C', 'MGR_A', 'MGR_B'].map(xOf)).toEqual([0, 216, 432])
+  })
 })
