@@ -10,38 +10,42 @@ Problem statement: `Student_SPR26_D2_P04-departmental-reorg-payroll-rollup-track
 Implementation plan: `docs/PLAN.md`. Independent expected-results oracle:
 `docs/EXPECTED_RESULTS.md`.
 
-> Status: documentation/planning stage — see `docs/PLAN.md` for the build
-> sequence. `backend/` and `frontend/` do not exist yet.
-
-## Intended stack
+## Stack
 
 - **Backend:** FastAPI (Python), pure-Python domain engine, pytest.
 - **Frontend:** React + TypeScript + Vite.
 - **Persistence:** none — in-memory only, single local session.
 
-## Intended run commands (once scaffolded per `ARCHITECTURE.md` §5)
+## Run commands (verified from a clean checkout)
 
 ```sh
-# Backend
+# Backend — install and run
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 
-# Backend tests
-cd backend
-pytest                              # full suite
-pytest tests/test_transfer.py       # single file
-pytest tests/test_transfer.py -k valid_cross_branch_transfer   # single test
+# Backend tests (run from the backend/ directory with .venv activated)
+cd backend && source .venv/bin/activate
+pytest                                                    # full suite (86 tests)
+pytest tests/test_transfer.py                              # single file
+pytest tests/test_transfer.py -k oracle_transfer_produces   # single test
 
-# Frontend
+# Frontend — install and run (in a second terminal, backend must be running)
 cd frontend
 npm install
-npm run dev                         # served separately, calls backend at :8000
+npm run dev                         # http://localhost:5173, calls backend at :8000
+
+# Frontend checks
+cd frontend
+npm run test -- --run               # vitest, 16 tests
+npm run build                       # tsc -b && vite build
+npm run lint                        # oxlint
 ```
 
-This section will be replaced with verified exact commands once the backend
-and frontend projects are scaffolded (`docs/PLAN.md` Stage 3–4).
+With both servers running, open `http://localhost:5173`, pick a scenario
+(`main-12` is selected by default) and click **Load** to run the full demo
+described in `docs/EXPECTED_RESULTS.md`.
 
 ## Project docs
 

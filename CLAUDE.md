@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-No `backend/` or `frontend/` code exists yet — this repo currently holds only
-planning/spec documents. Before writing any application code, read in this
-order:
+`backend/` (FastAPI + pure-Python domain engine) and `frontend/` (React +
+TypeScript + Vite) are fully built: 86 backend tests (`pytest`) and 16
+frontend tests (`vitest`) pass, the frontend build and lint are clean, and
+the full demo (load → valid cross-branch transfer → cycle/root-move
+rejection → reset → deterministic reapply) has been verified live against
+`docs/EXPECTED_RESULTS.md`. See `docs/TEST_EVIDENCE.md` for the evidence and
+`docs/PLAN.md`'s "Deviations" section (D1–D8) for where the implementation
+extended or tightened the original design. Before making further changes,
+read in this order:
 
 1. `Student_SPR26_D2_P04-departmental-reorg-payroll-rollup-tracker.md` — the
    **source of truth** for the problem. If anything in `PRD.md` or
@@ -30,17 +36,20 @@ progresses, not written retroactively at the end.
 
 ## Commands
 
-Not yet runnable — no project has been scaffolded. Once Stage 3/4 of
-`docs/PLAN.md` are complete, real commands go in `README.md`'s "Intended run
-commands" section (replace "intended" with verified exact commands). Expected
-shape, per `ARCHITECTURE.md` §5 and §23:
+Verified from a clean checkout (also in `README.md`):
 
 ```sh
-cd backend && pytest                                   # full backend suite
+# Backend (from backend/, with .venv activated: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt)
+cd backend && pytest                                   # full backend suite (86 tests)
 cd backend && pytest tests/test_transfer.py             # one file
 cd backend && pytest tests/test_transfer.py -k <name>   # one test
-cd backend && uvicorn app.main:app --reload --port 8000 # run API
-cd frontend && npm run dev                               # run UI
+cd backend && uvicorn app.main:app --reload --port 8000 # run API on :8000
+
+# Frontend (from frontend/, after npm install)
+cd frontend && npm run dev                               # run UI on :5173, calls backend at :8000
+cd frontend && npm run test -- --run                      # vitest (16 tests)
+cd frontend && npm run build                              # tsc -b && vite build
+cd frontend && npm run lint                               # oxlint
 ```
 
 ## Architecture (target — see `ARCHITECTURE.md` for full detail)

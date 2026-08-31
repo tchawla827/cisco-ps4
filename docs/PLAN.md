@@ -72,4 +72,52 @@ README run instructions verified from a clean checkout.
   `docs/EXPECTED_RESULTS.md` or test fixtures (AD-08).
 
 ## Deviations
-(none yet — append here as they happen, do not edit the stages above in place)
+(append here as they happen, do not edit the stages above in place)
+
+- **D1 — Frozen `Employee` dataclass stays a pure carrier, not a validator.**
+  `Employee` remains a frozen dataclass whose field annotations do not
+  coerce or reject values at construction time. This lets invalid-field
+  fixtures (bad ID shape, blank name, out-of-range salary) reach validation
+  pass 1 unchanged, so the pass-1 field check is provably exercised rather
+  than short-circuited by the type system.
+- **D2 — Scenario registry is a pure operational-data boundary, oracle stays
+  test-only.** `SCENARIOS` returns a fresh ordered employee list per
+  scenario key and holds no expected-result values; the hand-derived oracle
+  lives only in `backend/tests/oracle.py`. This keeps `docs/EXPECTED_RESULTS.md`
+  values out of `backend/app/**` end-to-end (AD-08), not just in the demo
+  dataset module.
+- **D3 — API adds a non-mutating transfer preview beyond the 4 mandated
+  routes.** `POST /api/department/transfer/preview` computes and returns
+  transfer impact without committing it, so the frontend can show a staged
+  preview before an operator commits to Apply. It calls the same domain
+  validation/apply path as the real transfer and never assigns service
+  state itself.
+- **D4 — Organisation chart layout is a presentation-only derived module.**
+  `layoutTree` (frontend) is a pure function over the backend's
+  `children_ids` and rollups: it assigns leaf slots in a post-order pass and
+  places parents at their children's midpoint, purely for SVG coordinates.
+  It computes no hierarchy, rollup, or transfer-eligibility logic and its
+  output never feeds back into API calls or ordering decisions.
+- **D5 — Comparison drawer renders backend snapshots only, no client
+  history.** The optional original/current comparison view (`PRD.md` §4,
+  §Optional) uses only the `originalDepartment` snapshot returned by a
+  successful load/reset response and the live `department` response; it
+  keeps no separate undo/redo history and cannot mutate operational
+  selection or transfer state from its read-only chart.
+- **D6 — `NO_DEPARTMENT_LOADED` is an API-only concern.** Unloaded-state
+  handling (409 `NO_DEPARTMENT_LOADED`) lives entirely in the FastAPI layer,
+  not in `DepartmentService` or the domain modules, since "no department is
+  loaded yet" is a transport/session concept, not a domain rule.
+- **D7 — Frontend keeps zero derived department state beyond the API
+  response.** The cockpit's `originalDepartment` is cached only from a
+  successful load/reset response for the comparison drawer; there is no
+  client-side tree, rollup, or impact computation anywhere in `frontend/src`
+  — every headcount, payroll, and highlight rendered is copied directly from
+  a backend view model.
+- **D8 — `DepartmentTree` carries the canonical source-order employee tuple.**
+  Beyond the indexes (`root_id`, `employee_by_id`, `children_by_id`)
+  specified in `ARCHITECTURE.md`, the derived tree also stores the
+  source-order employee sequence it was built from, so every downstream
+  calculation (rollups, transfer diffing, table rendering) can read
+  source order from one place instead of threading a parallel employee
+  list through each function signature.

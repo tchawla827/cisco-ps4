@@ -115,3 +115,22 @@ mock only the API boundary, and assert accessible rendered state rather than
 component doubles or full-page snapshots. The layout fixture deliberately
 scrambles employee-record order while retaining `children_ids`, so rendering
 order remains a presentation contract of the normalized hierarchy.
+
+### 2026-08-31 — Task 13 documentation and final verification
+**Prompt:** Run the real backend and frontend test/build/lint commands, drive
+a live end-to-end walkthrough of the demo (load, valid cross-branch transfer,
+cycle rejection, root-move rejection, reset, deterministic reapplication)
+against `docs/EXPECTED_RESULTS.md`'s exact oracle values, capture screenshots,
+then fill in `docs/TEST_EVIDENCE.md`, append D1–D8 to `docs/PLAN.md`, extend
+`docs/DESIGN_NOTES.md`, and replace `README.md`'s and `CLAUDE.md`'s
+not-yet-scaffolded language with verified commands.
+**Outcome:** accepted. 86 backend tests and 16 frontend tests passed, build
+and lint were clean, and every walkthrough step matched the oracle exactly
+(`HOD` 12/₹8,21,000; `MGR_A` 5→2/₹2,82,000→₹1,37,000; `MGR_C`
+2→5/₹1,17,000→₹2,62,000; `MANAGEMENT_CYCLE` and `ROOT_MOVE_FORBIDDEN`
+rejections left the chart/impact panel untouched; `solo-1` loaded at
+headcount 1; `invalid-duplicate-id` cleared the workspace to
+`NO_DEPARTMENT_LOADED`; reset then reapply reproduced byte-identical
+rollups). Screenshots saved under `.superpowers/sdd/task-13-evidence/`. No
+production-code defects were found, so no `backend/app/**` or `frontend/src`
+changes were made in this step.

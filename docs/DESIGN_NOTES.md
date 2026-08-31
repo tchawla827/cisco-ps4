@@ -105,3 +105,45 @@ a read-only rendering mode for the drawer: it preserves source-ordered layout
 and backend-provided impact markers while removing tree-item activation, so the
 comparison cannot mutate App selection or introduce an alternate hierarchy,
 rollup, or history model.
+
+### 2026-08-31 — Task 13 documentation and verification wrap-up
+Consolidated D1–D8 (see `docs/PLAN.md` "Deviations") from the choices already
+recorded above plus the execution ledger, and re-verified all of them live
+against the committed tree: 86 backend tests, 16 frontend tests, a clean
+frontend build and lint, and a Playwright-driven walkthrough of the full demo
+(load → valid cross-branch transfer → cycle rejection → root-move rejection →
+reset → deterministic reapplication) against `docs/EXPECTED_RESULTS.md`'s
+exact numbers. Every deviation is either an intentional boundary tightening
+(oracle isolation in D2, unloaded-state handling staying API-only in D6) or an
+additive, backward-compatible surface the mandated 4-route/6-pass/5-check
+contracts still fully satisfy (the preview route in D3, the presentation-only
+tree layout in D4) — none of them change validation order, transfer-check
+order, or the stable error codes.
+
+Two design choices called out in Task 13's brief are worth restating plainly,
+since they are the two most tempting "optimizations" a future contributor
+might reach for:
+
+- **Full recompute over incremental ancestor patching (AD-07).** After a
+  transfer, `calculate_rollups` walks the *entire* rebuilt tree postorder
+  rather than patching only the old and new ancestor chains. At n ≤ 30 this
+  costs nothing measurable, and it sidesteps an entire class of bugs that
+  incremental patching invites: forgetting a shared ancestor above a
+  cross-branch move, patching a chain twice when old and new managers share
+  ancestors, or drifting from the true value after several transfers. A full
+  recompute is trivially correct by construction — it is the same function
+  used for the initial load — so the transfer path and the load path can
+  never disagree about what a correct rollup looks like.
+- **`changed_rollup_ids` as an exact before/after value diff, not an
+  ancestor-path walk.** Computing "who changed" by walking from the moved
+  employee up to the root would over-report: on an internal cross-branch
+  move (e.g. `LEAD_A` from `MGR_A` to `MGR_C`), `HOD` sits on *both* the old
+  and new ancestor paths but its headcount and payroll are provably
+  unchanged (the same 12 people, same total payroll, just regrouped
+  underneath it). The chosen approach — compute rollups before and after,
+  then compare every employee's `(team_headcount, team_payroll)` pair in
+  source order — reports precisely the set that actually differs, with no
+  false positives and no risk of the ancestor-walk and the real diff ever
+  disagreeing. This is also why `HOD` is asserted absent from
+  `changed_rollup_ids` in `test_transfer.py`, not merely absent from a
+  hand-picked list of "expected" IDs.
