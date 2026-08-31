@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   ApiError,
+  addEmployee,
+  deleteEmployee,
   getDepartment,
   listScenarios,
   loadDepartment,
@@ -69,6 +71,14 @@ describe('department API route contracts', () => {
     await transfer('LEAD_A', 'MGR_C')
     await previewTransfer('LEAD_A', 'MGR_C')
     await resetDepartment()
+    await addEmployee({
+      employee_id: 'E7',
+      name: 'New Hire',
+      role: 'IC',
+      monthly_salary: 40_000,
+      manager_id: 'LEAD_A',
+    })
+    await deleteEmployee('E7')
 
     expect(fetchMock.mock.calls).toEqual([
       ['/api/scenarios', undefined],
@@ -84,6 +94,18 @@ describe('department API route contracts', () => {
         body: JSON.stringify({ employee_id: 'LEAD_A', new_manager_id: 'MGR_C' }),
       }],
       ['/api/department/reset', { method: 'POST' }],
+      ['/api/department/employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_id: 'E7',
+          name: 'New Hire',
+          role: 'IC',
+          monthly_salary: 40_000,
+          manager_id: 'LEAD_A',
+        }),
+      }],
+      ['/api/department/employees/E7', { method: 'DELETE' }],
     ])
   })
 
@@ -93,6 +115,14 @@ describe('department API route contracts', () => {
     ['transfer', () => transfer('LEAD_A', 'MGR_C')],
     ['previewTransfer', () => previewTransfer('LEAD_A', 'MGR_C')],
     ['resetDepartment', () => resetDepartment()],
+    ['addEmployee', () => addEmployee({
+      employee_id: 'E7',
+      name: 'New Hire',
+      role: 'IC',
+      monthly_salary: 40_000,
+      manager_id: 'LEAD_A',
+    })],
+    ['deleteEmployee', () => deleteEmployee('E7')],
   ])('keeps the ApiError type for %s non-success responses', async (_name, request) => {
     vi.stubGlobal(
       'fetch',

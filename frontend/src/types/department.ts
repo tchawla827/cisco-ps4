@@ -65,6 +65,14 @@ export interface PreviewTransferResponse {
   impact: TransferImpactView
 }
 
+export interface AddEmployeeRequest {
+  employee_id: string
+  name: string
+  role: string
+  monthly_salary: number
+  manager_id: string
+}
+
 export class ApiError extends Error {
   readonly code: string
 

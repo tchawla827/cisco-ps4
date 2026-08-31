@@ -1,5 +1,6 @@
 import {
   ApiError,
+  type AddEmployeeRequest,
   type DepartmentView,
   type PreviewTransferResponse,
   type ScenarioView,
@@ -69,4 +70,16 @@ export function previewTransfer(
 
 export function resetDepartment(): Promise<DepartmentView> {
   return request('/api/department/reset', { method: 'POST' })
+}
+
+export function addEmployee(body: AddEmployeeRequest): Promise<DepartmentView> {
+  return request<DepartmentView>('/api/department/employees', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+export function deleteEmployee(employeeId: string): Promise<DepartmentView> {
+  return request<DepartmentView>(`/api/department/employees/${employeeId}`, { method: 'DELETE' })
 }
