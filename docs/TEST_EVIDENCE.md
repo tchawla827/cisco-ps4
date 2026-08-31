@@ -6,6 +6,13 @@ Stage 5 (Task 13) tree from a clean checkout: `backend` via `pytest -v`
 inside `backend/.venv`, `frontend` via `npm run test`, `npm run build`, and
 `npm run lint`.
 
+**Note:** the counts below (86 backend / 16 frontend) are the historical
+Task 13 snapshot and are preserved as-is for that record. The frontend
+revamp (tree-as-hero layout, drag-and-drop transfer, add/delete employee)
+added further backend and frontend tests; see "Addendum — 2026-08-31 fix
+wave re-verification" at the end of this file for the current counts (108
+backend / 38 frontend) and fresh run output.
+
 ## Backend (`pytest -v`)
 
 86 tests collected, 86 passed, 0 failed, run time 0.27s.
@@ -82,3 +89,58 @@ cd frontend && npm run test -- --run && npm run build && npm run lint
 
 Result: **16 passed** (vitest), build succeeded (`tsc -b && vite build`),
 lint exit 0 (`oxlint`).
+
+## Addendum — 2026-08-31 fix wave re-verification
+
+Re-run from the current tree (post frontend-revamp fix wave: real fit-to-
+screen, widened cards, pan dead-zone fix, drag-preview zoom compensation,
+stale-preview clearing on add/delete, `encodeURIComponent` on the delete
+path, dead CSS class removal — see `.superpowers/sdd/2026-08-31-frontend-
+revamp/final-fix-report.md` for the full list).
+
+```sh
+cd backend && source .venv/bin/activate && pytest -q
+```
+```
+........................................................................ [ 66%]
+....................................                                     [100%]
+108 passed in 0.31s
+```
+
+```sh
+cd frontend && npm run test -- --run
+```
+```
+ Test Files  8 passed (8)
+      Tests  38 passed (38)
+```
+
+```sh
+cd frontend && npm run build
+```
+```
+✓ 1839 modules transformed.
+dist/index.html                   0.45 kB │ gzip:  0.29 kB
+dist/assets/index-DIf8bBQh.css   16.85 kB │ gzip:  3.84 kB
+dist/assets/index-DkaeH_4M.js   265.81 kB │ gzip: 82.63 kB
+✓ built in 284ms
+```
+
+```sh
+cd frontend && npm run lint
+```
+```
+src/components/OrgTreeCanvas.tsx:24:17: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+```
+(This is the single pre-existing, expected warning for exporting `resolveDrop`
+alongside the `OrgTreeCanvas` component — no errors.)
+
+A live Playwright-driven walkthrough of drag-and-drop (`LEAD_A` dragged onto
+`MGR_C`, confirmed via the `TransferDropConfirm` popover, tree updates to
+`MGR_A` 5→2 / `MGR_C` 2→5; then reset, `MGR_A` dragged onto `E3`, popover
+shows `MANAGEMENT_CYCLE` inline with Confirm disabled, Cancel leaves the
+department untouched) also passed — see the fix-wave report for details and
+screenshot references. Simple single-shot `dragTo()` automation did not
+trigger `@dnd-kit`'s `PointerSensor` (no intermediate pointermove steps past
+its 8px activation distance); a manual stepped `page.mouse` down/move/up
+sequence did.

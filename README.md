@@ -27,7 +27,7 @@ uvicorn app.main:app --reload --port 8000
 
 # Backend tests (run from the backend/ directory with .venv activated)
 cd backend && source .venv/bin/activate
-pytest                                                    # full suite (86 tests)
+pytest                                                    # full suite (108 tests)
 pytest tests/test_transfer.py                              # single file
 pytest tests/test_transfer.py -k oracle_transfer_produces   # single test
 
@@ -38,7 +38,7 @@ npm run dev                         # http://localhost:5173, calls backend at :8
 
 # Frontend checks
 cd frontend
-npm run test -- --run               # vitest, 16 tests
+npm run test -- --run               # vitest, 38 tests
 npm run build                       # tsc -b && vite build
 npm run lint                        # oxlint
 ```

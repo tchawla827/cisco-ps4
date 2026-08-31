@@ -240,3 +240,21 @@ styled `CollapsiblePanel` columns. The fix is almost certainly a one-line
 CSS addition (e.g. `.workspace-zone--chart { display: flex; flex-direction:
 column; min-height: 0; }` to match `.collapsible-panel`'s pattern), but per
 this task's scope that fix was left for a follow-up rather than made here.
+
+**Update, 2026-08-31 (fix wave, commit `9e9da83`).** The follow-up fix
+predicted above is exactly what landed: `9e9da83` added
+`.workspace-zone--chart { display: flex; flex-direction: column; min-height:
+0; min-width: 0; }` to `frontend/src/workspace.css`, giving `.tree-stage`'s
+`flex:1` chain a real flex container to size against. This was re-verified
+live with a Playwright screenshot showing the full organisation tree
+(`HOD` down through every leaf) rendered at full viewport height, cards
+visually present and pointer-clickable, not just DOM-present. The bug
+description above remains accurate as a record of what was found before the
+fix; it is no longer the current behavior.
+
+**Also logged here (not previously called out as deviations):** two spec
+section 4 items were cut for the deadline without an explicit deviation
+note — "Expand all / Collapse all" toolbar buttons were never built (only
+per-node collapse/expand chevrons exist), and the drop-confirm popover is a
+fixed bottom-center bar (`.drop-confirm`, `position: fixed; bottom: 28px`)
+rather than appearing "at the drop point" as the spec describes.

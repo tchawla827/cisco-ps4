@@ -160,3 +160,12 @@ first load. All non-visual transfer/add/delete/reset outcomes matched
 the CSS bug was documented as a concern rather than fixed; no
 `backend/app/**` or `frontend/src` changes were made in this step, only
 `docs/DESIGN_NOTES.md` and this file.
+
+**Update, 2026-08-31 (fix wave, commit `9e9da83`).** The CSS bug logged
+above was fixed by adding a `.workspace-zone--chart` flex-container rule to
+`frontend/src/workspace.css` (matching `.collapsible-panel`'s existing
+`display:flex; flex:1; min-height:0` pattern), and re-verified live via a
+Playwright screenshot showing the organisation tree rendering at full
+height with clickable cards. Drag-and-drop and visual zoom/pan/collapse are
+therefore no longer blocked. See `docs/DESIGN_NOTES.md`'s matching Task-12
+entry for the fuller account.

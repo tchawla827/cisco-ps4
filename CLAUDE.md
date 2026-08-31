@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project state
 
 `backend/` (FastAPI + pure-Python domain engine) and `frontend/` (React +
-TypeScript + Vite) are fully built: 86 backend tests (`pytest`) and 16
+TypeScript + Vite) are fully built: 108 backend tests (`pytest`) and 38
 frontend tests (`vitest`) pass, the frontend build and lint are clean, and
 the full demo (load → valid cross-branch transfer → cycle/root-move
 rejection → reset → deterministic reapply) has been verified live against
@@ -40,14 +40,14 @@ Verified from a clean checkout (also in `README.md`):
 
 ```sh
 # Backend (from backend/, with .venv activated: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt)
-cd backend && pytest                                   # full backend suite (86 tests)
+cd backend && pytest                                   # full backend suite (108 tests)
 cd backend && pytest tests/test_transfer.py             # one file
 cd backend && pytest tests/test_transfer.py -k <name>   # one test
 cd backend && uvicorn app.main:app --reload --port 8000 # run API on :8000
 
 # Frontend (from frontend/, after npm install)
 cd frontend && npm run dev                               # run UI on :5173, calls backend at :8000
-cd frontend && npm run test -- --run                      # vitest (16 tests)
+cd frontend && npm run test -- --run                      # vitest (38 tests)
 cd frontend && npm run build                              # tsc -b && vite build
 cd frontend && npm run lint                               # oxlint
 ```
@@ -59,7 +59,11 @@ in a small set of **pure Python functions with no FastAPI/HTTP dependency**
 (`backend/app/domain/{validation,tree,rollups,transfer}.py`), which a thin
 `DepartmentService` orchestrates and thin FastAPI routes expose. The React
 frontend is presentation-only — it never recomputes hierarchy, rollups, or
-validation; it renders whatever the backend returns.
+validation; it renders whatever the backend returns. The API surface also
+includes two additive roster routes from the frontend revamp,
+`POST /api/department/employees` (add) and
+`DELETE /api/department/employees/{employee_id}` (delete), which follow the
+same validate → candidate → recompute → commit discipline as transfer.
 
 Key invariants that shape almost every change:
 
@@ -101,3 +105,14 @@ Transfer: `UNKNOWN_TRANSFER_EMPLOYEE`, `ROOT_MOVE_FORBIDDEN`, `SELF_MANAGER`,
 
 These are part of the tested contract with the frontend and test suite — the
 UI and tests key off these exact strings.
+
+## Roster (add/delete) error codes — additive, separate contract
+
+`EMPLOYEE_NOT_FOUND`, `ROOT_DELETE_FORBIDDEN`, `EMPLOYEE_HAS_DIRECT_REPORTS`.
+
+These back the additive `POST /api/department/employees` and
+`DELETE /api/department/employees/{employee_id}` routes added in the frontend
+revamp (`backend/app/domain/roster.py`). They are intentionally kept out of
+the Load/Transfer lists above — those two are the closed, graded contract
+from `ARCHITECTURE.md`; this grouping is a separate, purely additive surface
+that must never be merged into them.
