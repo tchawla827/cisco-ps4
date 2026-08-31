@@ -73,3 +73,13 @@ verify the development proxy renders the main department rollup.
 stub that loads `main-12`; added JSdom Vitest setup, Testing Library support,
 and a shared non-2xx parser that always throws `ApiError` with backend code and
 message rather than a partial department.
+
+### 2026-08-31 — D7 payroll operations cockpit
+**Prompt:** Build the first frontend workspace increment as a dense university
+payroll-operations cockpit: fixed utility header, source-ordered employee table,
+reserved chart and review zones, accessible semantic status markers, and distinct
+invalid-load versus rejected-transfer state handling.
+**Outcome:** accepted. Used the specified neutral dark token set and semantic
+multi-colour states; table and chart/detail placeholders deliberately avoid client-side
+hierarchy or payroll calculation. Transfer handlers live at the App boundary now so
+Task 10 controls retain the required rejection semantics.

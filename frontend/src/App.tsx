@@ -1,23 +1,203 @@
 import { useEffect, useState } from 'react'
 
-import { loadDepartment } from './api/department'
-import type { DepartmentView } from './types/department'
+import {
+  ApiError,
+  listScenarios,
+  loadDepartment,
+  previewTransfer,
+  resetDepartment,
+  transfer,
+} from './api/department'
+import { AppHeader } from './components/AppHeader'
+import { EmployeeTable } from './components/EmployeeTable'
+import { MessageBanner, type BannerMessage } from './components/MessageBanner'
+import type { DepartmentView, ScenarioView, TransferImpactView } from './types/department'
 
-function App() {
-  const [department, setDepartment] = useState<DepartmentView | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    void loadDepartment('main-12').then(setDepartment).catch((apiError: unknown) => {
-      setError(apiError instanceof Error ? apiError.message : 'Unable to load department')
-    })
-  }, [])
-
-  if (error) {
-    return <pre>{error}</pre>
+function messageFromError(error: unknown, fallback: string): BannerMessage {
+  if (error instanceof ApiError) {
+    return { kind: 'error', code: error.code, message: error.message }
   }
 
-  return <pre>{department ? JSON.stringify(department, null, 2) : 'Loading department...'}</pre>
+  return { kind: 'error', code: 'REQUEST_FAILED', message: fallback }
+}
+
+function App() {
+  const [scenarios, setScenarios] = useState<ScenarioView[]>([])
+  const [scenario, setScenario] = useState('main-12')
+  const [department, setDepartment] = useState<DepartmentView | null>(null)
+  const [originalDepartment, setOriginalDepartment] = useState<DepartmentView | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [transferEmployeeId, setTransferEmployeeId] = useState('')
+  const [newManagerId, setNewManagerId] = useState('')
+  const [previewImpact, setPreviewImpact] = useState<TransferImpactView | null>(null)
+  const [banner, setBanner] = useState<BannerMessage | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [compareOpen, setCompareOpen] = useState(false)
+
+  useEffect(() => {
+    void listScenarios()
+      .then(setScenarios)
+      .catch((error: unknown) => setBanner(messageFromError(error, 'Unable to load scenarios.')))
+  }, [])
+
+  const clearInvalidLoad = (error: unknown) => {
+    setDepartment(null)
+    setOriginalDepartment(null)
+    setPreviewImpact(null)
+    setSelectedId(null)
+    setTransferEmployeeId('')
+    setNewManagerId('')
+    setCompareOpen(false)
+    setBanner(messageFromError(error, 'Unable to load the selected department.'))
+  }
+
+  const handleLoad = async () => {
+    setLoading(true)
+    try {
+      const loadedDepartment = await loadDepartment(scenario)
+      setDepartment(loadedDepartment)
+      setOriginalDepartment(loadedDepartment)
+      setSelectedId(loadedDepartment.root_id)
+      setTransferEmployeeId('')
+      setNewManagerId('')
+      setPreviewImpact(null)
+      setCompareOpen(false)
+      setBanner({ kind: 'success', message: `Loaded ${loadedDepartment.employees.length} employee records.` })
+    } catch (error) {
+      clearInvalidLoad(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReset = async () => {
+    setLoading(true)
+    try {
+      const reset = await resetDepartment()
+      setDepartment(reset)
+      setOriginalDepartment(reset)
+      setSelectedId(reset.root_id)
+      setTransferEmployeeId('')
+      setNewManagerId('')
+      setPreviewImpact(null)
+      setCompareOpen(false)
+      setBanner({ kind: 'success', message: 'Department reset to its loaded state.' })
+    } catch (error) {
+      setBanner(messageFromError(error, 'Unable to reset the department.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePreview = async () => {
+    if (!department || !transferEmployeeId || !newManagerId) return
+
+    setLoading(true)
+    try {
+      const response = await previewTransfer(transferEmployeeId, newManagerId)
+      setPreviewImpact(response.impact)
+      setBanner({ kind: 'success', message: 'Transfer preview is ready for review.' })
+    } catch (error) {
+      setPreviewImpact(null)
+      setBanner(messageFromError(error, 'Unable to preview this transfer.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleTransfer = async () => {
+    if (!department || !transferEmployeeId || !newManagerId) return
+
+    setLoading(true)
+    try {
+      const response = await transfer(transferEmployeeId, newManagerId)
+      setDepartment(response.department)
+      setPreviewImpact(null)
+      setSelectedId(response.impact.employee_id)
+      setBanner({ kind: 'success', message: 'Transfer applied to the current department.' })
+    } catch (error) {
+      setPreviewImpact(null)
+      setBanner(messageFromError(error, 'Transfer was not applied.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Task 10 mounts controls onto these state-bound handlers.
+  void handlePreview
+  void handleTransfer
+
+  const impact = previewImpact ?? department?.last_successful_transfer ?? null
+  const selectedEmployee = department?.employees.find((employee) => employee.employee_id === selectedId) ?? null
+
+  return (
+    <main className="app-shell">
+      <AppHeader
+        scenarios={scenarios}
+        scenario={scenario}
+        loading={loading}
+        hasDepartment={department !== null && originalDepartment !== null}
+        compareOpen={compareOpen}
+        onScenarioChange={setScenario}
+        onLoad={() => void handleLoad()}
+        onReset={() => void handleReset()}
+        onCompareToggle={() => setCompareOpen((open) => !open)}
+      />
+      <section className="cockpit" aria-label="Department payroll workspace">
+        <section className="workspace-zone workspace-zone--table" aria-labelledby="employee-table-heading">
+          <div className="workspace-zone__header">
+            <span className="workspace-zone__eyebrow">SOURCE RECORDS</span>
+            <span className="workspace-zone__title" id="employee-table-heading">Employees</span>
+          </div>
+          <div className="workspace-zone__body">
+            <MessageBanner banner={banner} />
+            {department ? (
+              <EmployeeTable department={department} selectedId={selectedId} impact={impact} onSelect={setSelectedId} />
+            ) : (
+              <div className="empty-state">No valid department loaded.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="workspace-zone workspace-zone--chart" aria-labelledby="org-chart-heading">
+          <div className="workspace-zone__header">
+            <span className="workspace-zone__eyebrow">REPORTING LINES</span>
+            <span className="workspace-zone__title" id="org-chart-heading">Organisation chart</span>
+          </div>
+          <div className="workspace-zone__body">
+            <div className="chart-stage">
+              {department ? 'Chart workspace ready.' : 'No organisation chart to display.'}
+            </div>
+          </div>
+        </section>
+
+        <aside className="workspace-zone workspace-zone--right" aria-label="Department review panels">
+          <div className="workspace-zone__header">
+            <span className="workspace-zone__eyebrow">REVIEW</span>
+            <span className="workspace-zone__title">Work queue</span>
+          </div>
+          <div className="workspace-zone__body">
+            <section className="workspace-section">
+              <h2 className="workspace-section__heading">Details</h2>
+              <p className="workspace-section__empty">
+                {selectedEmployee ? `${selectedEmployee.employee_id} selected.` : 'No employee selected.'}
+              </p>
+            </section>
+            <section className="workspace-section">
+              <h2 className="workspace-section__heading">Transfer</h2>
+              <p className="workspace-section__empty">No transfer staged.</p>
+            </section>
+            <section className="workspace-section">
+              <h2 className="workspace-section__heading">Impact</h2>
+              <p className="workspace-section__empty">
+                {impact ? 'Current transfer impact is retained.' : 'No transfer impact available.'}
+              </p>
+            </section>
+          </div>
+        </aside>
+      </section>
+    </main>
+  )
 }
 
 export default App

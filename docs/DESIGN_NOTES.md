@@ -66,3 +66,16 @@ from the service's canonical ordered employees plus derived tree and rollups;
 it neither validates hierarchy rules nor stores a second mutable department
 representation. This preserves source order, keeps domain code free of FastAPI
 and Pydantic, and lets root-invariant failures remain 500 implementation defects.
+
+### 2026-08-31 — D7 operational UI state and semantic language
+The frontend uses the API response as its sole department snapshot. `originalDepartment`
+is cached only on a successful load/reset for the later comparison view; no client-side
+tree, rollup, or impact calculation is introduced. An invalid load clears all visible
+department-derived state, while a rejected transfer only clears a speculative preview so
+the current department and backend-provided `last_successful_transfer` remain visible.
+
+The workspace is intentionally a dense three-zone operations surface, using the fixed
+dark console tokens and a quiet system sans alongside monospace identifiers and tabular
+numeric values. Root, selected, moved, and changed states each carry a symbol and label
+as well as a distinct semantic colour; later table, chart, details, and impact components
+share that same language rather than inventing component-local highlights.
