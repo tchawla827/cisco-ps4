@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 
+import { formatCurrency } from '../format'
 import type { DepartmentView, TransferImpactView } from '../types/department'
 import { ChangeCard } from './ChangeCard'
 
@@ -7,10 +8,6 @@ interface ImpactPanelProps {
   department: DepartmentView | null
   impact: TransferImpactView | null
   preview: boolean
-}
-
-function formatCurrency(amount: number): string {
-  return `INR ${amount.toLocaleString('en-US')}`
 }
 
 export function ImpactPanel({ department, impact, preview }: ImpactPanelProps) {

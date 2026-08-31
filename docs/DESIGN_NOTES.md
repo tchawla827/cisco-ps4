@@ -60,8 +60,11 @@ rejected transfers preserve it exactly.
 
 ### 2026-08-31 — D3/D6 thin API and normalized views
 The FastAPI layer owns scenario discovery and non-domain request state: D3 adds
-the scenario list and non-mutating transfer preview, while D6 defines the API
-only `NO_DEPARTMENT_LOADED` 409 envelope. It projects normalized Pydantic views
+the scenario list (`GET /api/scenarios`), the `LoadRequest.scenario` body on
+`POST /api/department/load`, and the non-mutating transfer preview, while D6
+defines the API-only `NO_DEPARTMENT_LOADED` 409 envelope. See `docs/PLAN.md`
+D3 for the full rationale (demonstrability of invalid-load and solo-1
+acceptance criteria from the UI). It projects normalized Pydantic views
 from the service's canonical ordered employees plus derived tree and rollups;
 it neither validates hierarchy rules nor stores a second mutable department
 representation. This preserves source order, keeps domain code free of FastAPI

@@ -86,12 +86,22 @@ README run instructions verified from a clean checkout.
   lives only in `backend/tests/oracle.py`. This keeps `docs/EXPECTED_RESULTS.md`
   values out of `backend/app/**` end-to-end (AD-08), not just in the demo
   dataset module.
-- **D3 — API adds a non-mutating transfer preview beyond the 4 mandated
-  routes.** `POST /api/department/transfer/preview` computes and returns
-  transfer impact without committing it, so the frontend can show a staged
-  preview before an operator commits to Apply. It calls the same domain
+- **D3 — API adds a non-mutating transfer preview, plus scenario discovery
+  and a scenario-selecting load body, beyond the 4 mandated routes/shape.**
+  `POST /api/department/transfer/preview` computes and returns transfer
+  impact without committing it, so the frontend can show a staged preview
+  before an operator commits to Apply. It calls the same domain
   validation/apply path as the real transfer and never assigns service
-  state itself.
+  state itself. `GET /api/scenarios` (`backend/app/api/department.py`) is a
+  second additive route, and `POST /api/department/load` accepts a JSON body
+  (`LoadRequest.scenario`, `backend/app/models/department.py`) rather than
+  being parameterless as `ARCHITECTURE.md` §15.1 specifies. Both exist for
+  the same reason as the preview route: they are what make the invalid-load
+  and solo-1 acceptance criteria demonstrable from the UI (an operator must
+  be able to pick a non-`main-12` scenario and see it load or fail) rather
+  than only testable directly against the domain layer. None of the three
+  changes alter the 4 mandated routes' own contracts, the 6-pass/5-check
+  ordering, or the stable error codes.
 - **D4 — Organisation chart layout is a presentation-only derived module.**
   `layoutTree` (frontend) is a pure function over the backend's
   `children_ids` and rollups: it assigns leaf slots in a post-order pass and

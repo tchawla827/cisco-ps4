@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from 'react'
 
+import { formatCurrency } from '../format'
 import type { DepartmentView, TransferImpactView } from '../types/department'
 import { layoutTree, NODE_H, NODE_W } from './orgTreeLayout'
 
@@ -10,10 +11,6 @@ interface OrgTreeProps {
   onSelect?: (employeeId: string) => void
   readOnly?: boolean
   ariaLabel?: string
-}
-
-function formatPayroll(amount: number): string {
-  return `₹${amount.toLocaleString('en-IN')}`
 }
 
 function selectOnActivation(event: KeyboardEvent<SVGGElement>, employeeId: string, onSelect: (id: string) => void) {
@@ -75,7 +72,7 @@ export function OrgTree({
               role={isInteractive ? 'treeitem' : undefined}
               tabIndex={isInteractive ? 0 : undefined}
               aria-selected={isInteractive ? employee.employee_id === selectedId : undefined}
-              aria-label={`${employee.employee_id}, ${employee.name}, ${employee.team_headcount} headcount, ${formatPayroll(employee.team_payroll)} payroll${managerDescription}${statusDescription}`}
+              aria-label={`${employee.employee_id}, ${employee.name}, ${employee.team_headcount} headcount, ${formatCurrency(employee.team_payroll)} payroll${managerDescription}${statusDescription}`}
               transform={`translate(${node.x} ${node.y})`}
               onClick={isInteractive ? () => onSelect(employee.employee_id) : undefined}
               onKeyDown={isInteractive ? (event) => selectOnActivation(event, employee.employee_id, onSelect) : undefined}
@@ -84,7 +81,7 @@ export function OrgTree({
               <text className="org-tree__id" x="12" y="20">{employee.employee_id}</text>
               <text className="org-tree__name" x="12" y="43" textLength="156" lengthAdjust="spacingAndGlyphs">{employee.name}</text>
               <text className="org-tree__metrics" x="12" y="68" textLength="156" lengthAdjust="spacingAndGlyphs">
-                {`HC ${employee.team_headcount} · ${formatPayroll(employee.team_payroll)}`}
+                {`HC ${employee.team_headcount} · ${formatCurrency(employee.team_payroll)}`}
               </text>
               {markers.length > 0 ? (
                 <text className="org-tree__markers" x="168" y="20" textAnchor="end" aria-hidden="true">

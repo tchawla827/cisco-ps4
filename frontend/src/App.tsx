@@ -128,9 +128,20 @@ function App() {
     }
   }
 
+  const handleTransferEmployeeIdChange = (employeeId: string) => {
+    setTransferEmployeeId(employeeId)
+    setPreviewImpact(null)
+  }
+
+  const handleNewManagerIdChange = (managerId: string) => {
+    setNewManagerId(managerId)
+    setPreviewImpact(null)
+  }
+
   const loadTransferPreset = (employeeId: string, managerId: string) => {
     setTransferEmployeeId(employeeId)
     setNewManagerId(managerId)
+    setPreviewImpact(null)
     setBanner({ kind: 'success', message: `Staged ${employeeId} → ${managerId}.` })
   }
 
@@ -139,7 +150,14 @@ function App() {
 
     const root = department.employees.find((employee) => employee.employee_id === department.root_id)
     const demonstrationManagerId = root?.children_ids[0] ?? department.employees.find((employee) => employee.employee_id !== department.root_id)?.employee_id
-    if (!demonstrationManagerId) return
+    if (!demonstrationManagerId) {
+      setBanner({
+        kind: 'error',
+        code: 'NO_DEMONSTRATION_TARGET',
+        message: 'No other employee exists to demonstrate a root move on this scenario.',
+      })
+      return
+    }
 
     setLoading(true)
     try {
@@ -218,8 +236,8 @@ function App() {
                 employeeId={transferEmployeeId}
                 newManagerId={newManagerId}
                 loading={loading}
-                onEmployeeIdChange={setTransferEmployeeId}
-                onNewManagerIdChange={setNewManagerId}
+                onEmployeeIdChange={handleTransferEmployeeIdChange}
+                onNewManagerIdChange={handleNewManagerIdChange}
                 onPreview={() => void handlePreview()}
                 onApply={() => void handleTransfer()}
                 onLoadValidPreset={() => loadTransferPreset('LEAD_A', 'MGR_C')}

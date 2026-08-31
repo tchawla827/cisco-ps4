@@ -1,11 +1,8 @@
+import { formatCurrency } from '../format'
 import type { EmployeeView } from '../types/department'
 
 interface EmployeeDetailsProps {
   employee: EmployeeView | null
-}
-
-function formatCurrency(amount: number): string {
-  return `INR ${amount.toLocaleString('en-US')}`
 }
 
 export function EmployeeDetails({ employee }: EmployeeDetailsProps) {

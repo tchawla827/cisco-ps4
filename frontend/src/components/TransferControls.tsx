@@ -39,6 +39,7 @@ export function TransferControls({
 
   const root = department.employees.find((employee) => employee.employee_id === department.root_id)
   const canSubmit = !loading && employeeId !== '' && newManagerId !== ''
+  const presetsAvailable = department.scenario === 'main-12'
 
   return (
     <div className="transfer-controls">
@@ -95,14 +96,20 @@ export function TransferControls({
       </div>
 
       <div className="transfer-controls__presets" aria-label="Transfer examples">
-        <button className="preset-button" type="button" onClick={onLoadValidPreset} disabled={loading}>
-          <FlaskConical aria-hidden="true" size={15} strokeWidth={2} />
-          <span>Valid preset</span>
-        </button>
-        <button className="preset-button" type="button" onClick={onLoadCyclePreset} disabled={loading}>
-          <RotateCw aria-hidden="true" size={15} strokeWidth={2} />
-          <span>Cycle preset</span>
-        </button>
+        {presetsAvailable ? (
+          <>
+            <button className="preset-button" type="button" onClick={onLoadValidPreset} disabled={loading}>
+              <FlaskConical aria-hidden="true" size={15} strokeWidth={2} />
+              <span>Valid preset</span>
+            </button>
+            <button className="preset-button" type="button" onClick={onLoadCyclePreset} disabled={loading}>
+              <RotateCw aria-hidden="true" size={15} strokeWidth={2} />
+              <span>Cycle preset</span>
+            </button>
+          </>
+        ) : (
+          <p className="transfer-controls__hint">Presets are only wired for the main-12 scenario.</p>
+        )}
         <button className="preset-button preset-button--danger" type="button" onClick={onAttemptRootMove} disabled={loading || root === undefined}>
           <TriangleAlert aria-hidden="true" size={15} strokeWidth={2} />
           <span>Attempt root move</span>

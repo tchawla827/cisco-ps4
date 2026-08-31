@@ -1,3 +1,4 @@
+import { formatCurrency } from '../format'
 import type { DepartmentView, TransferImpactView } from '../types/department'
 import { StatusBadge, type StatusKind } from './StatusBadge'
 
@@ -6,10 +7,6 @@ interface EmployeeTableProps {
   selectedId: string | null
   impact: TransferImpactView | null
   onSelect: (employeeId: string) => void
-}
-
-function formatCurrency(amount: number): string {
-  return `INR ${amount.toLocaleString('en-US')}`
 }
 
 export function EmployeeTable({ department, selectedId, impact, onSelect }: EmployeeTableProps) {

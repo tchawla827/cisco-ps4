@@ -1,12 +1,9 @@
+import { formatCurrency } from '../format'
 import type { RollupChangeView } from '../types/department'
 
 interface ChangeCardProps {
   change: RollupChangeView
   preview: boolean
-}
-
-function formatCurrency(amount: number): string {
-  return `INR ${amount.toLocaleString('en-US')}`
 }
 
 function signed(value: number): string {
