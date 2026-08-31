@@ -9,9 +9,12 @@ import {
   transfer,
 } from './api/department'
 import { AppHeader } from './components/AppHeader'
+import { EmployeeDetails } from './components/EmployeeDetails'
 import { EmployeeTable } from './components/EmployeeTable'
+import { ImpactPanel } from './components/ImpactPanel'
 import { MessageBanner, type BannerMessage } from './components/MessageBanner'
 import { OrgTree } from './components/OrgTree'
+import { TransferControls } from './components/TransferControls'
 import type { DepartmentView, ScenarioView, TransferImpactView } from './types/department'
 
 function messageFromError(error: unknown, fallback: string): BannerMessage {
@@ -124,9 +127,29 @@ function App() {
     }
   }
 
-  // Task 10 mounts controls onto these state-bound handlers.
-  void handlePreview
-  void handleTransfer
+  const loadTransferPreset = (employeeId: string, managerId: string) => {
+    setTransferEmployeeId(employeeId)
+    setNewManagerId(managerId)
+    setBanner({ kind: 'success', message: `Staged ${employeeId} → ${managerId}.` })
+  }
+
+  const handleRootMoveAttempt = async () => {
+    if (!department) return
+
+    const root = department.employees.find((employee) => employee.employee_id === department.root_id)
+    const demonstrationManagerId = root?.children_ids[0] ?? department.employees.find((employee) => employee.employee_id !== department.root_id)?.employee_id
+    if (!demonstrationManagerId) return
+
+    setLoading(true)
+    try {
+      await transfer(department.root_id, demonstrationManagerId)
+    } catch (error) {
+      setPreviewImpact(null)
+      setBanner(messageFromError(error, 'Root transfer was not applied.'))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const impact = previewImpact ?? department?.last_successful_transfer ?? null
   const selectedEmployee = department?.employees.find((employee) => employee.employee_id === selectedId) ?? null
@@ -185,19 +208,27 @@ function App() {
           <div className="workspace-zone__body">
             <section className="workspace-section">
               <h2 className="workspace-section__heading">Details</h2>
-              <p className="workspace-section__empty">
-                {selectedEmployee ? `${selectedEmployee.employee_id} selected.` : 'No employee selected.'}
-              </p>
+              <EmployeeDetails employee={selectedEmployee} />
             </section>
             <section className="workspace-section">
               <h2 className="workspace-section__heading">Transfer</h2>
-              <p className="workspace-section__empty">No transfer staged.</p>
+              <TransferControls
+                department={department}
+                employeeId={transferEmployeeId}
+                newManagerId={newManagerId}
+                loading={loading}
+                onEmployeeIdChange={setTransferEmployeeId}
+                onNewManagerIdChange={setNewManagerId}
+                onPreview={() => void handlePreview()}
+                onApply={() => void handleTransfer()}
+                onLoadValidPreset={() => loadTransferPreset('LEAD_A', 'MGR_C')}
+                onLoadCyclePreset={() => loadTransferPreset('MGR_A', 'E3')}
+                onAttemptRootMove={() => void handleRootMoveAttempt()}
+              />
             </section>
             <section className="workspace-section">
               <h2 className="workspace-section__heading">Impact</h2>
-              <p className="workspace-section__empty">
-                {impact ? 'Current transfer impact is retained.' : 'No transfer impact available.'}
-              </p>
+              <ImpactPanel department={department} impact={impact} preview={previewImpact !== null} />
             </section>
           </div>
         </aside>

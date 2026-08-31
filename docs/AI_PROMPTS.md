@@ -91,3 +91,10 @@ source-order layout, keyboard selection, and transfer-impact markers.
 view only: a post-order presentation layout assigns leaf slots and parent
 midpoints, while impact styling uses the API-provided preview or last committed
 impact without calculating hierarchy, payroll, or transfer state in the client.
+
+### 2026-08-31 — Task 10 transfer review panels
+**Prompt:** Add read-only employee details, staged transfer controls, and an
+impact panel that preserves committed state through rejected transfer attempts.
+**Outcome:** accepted. Controls call the existing API boundary directly; the
+impact panel presents backend-provided source-order changes and distinguishes a
+preview with dashed treatment rather than calculating payroll client-side.

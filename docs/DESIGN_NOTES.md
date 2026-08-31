@@ -88,3 +88,12 @@ The resulting coordinates and elbow paths are used only by `OrgTree`; they are
 never written into the department snapshot or fed back into transfer, rollup,
 or ordering decisions. Preview impact uses a dashed outline so it remains
 visually distinct from backend-confirmed transfer state.
+
+### 2026-08-31 — Task 10 API-backed impact presentation
+`ImpactPanel` derives card order from `changed_rollup_ids` and finds matching
+server-provided change views by ID; the browser never infers ancestor paths or
+rollup deltas. Preview state is local and dashed in both chart and panel, while
+the fallback to `last_successful_transfer` keeps confirmed impact visible after
+cycle or root-protection rejections. On narrow screens the employee table moves
+to page flow and retains only horizontal scrolling, preventing an inspected row
+from leaving the mobile source-records pane vertically scrolled.
