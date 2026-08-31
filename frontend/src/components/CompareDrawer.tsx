@@ -18,6 +18,23 @@ function trapDrawerFocus(event: KeyboardEvent<HTMLElement>, closeButton: HTMLBut
   closeButton.focus()
 }
 
+function ReportingRelationships({ department, label }: { department: DepartmentView; label: string }) {
+  return (
+    <div className="visually-hidden">
+      <h4>{label} reporting relationships</h4>
+      <ul>
+        {department.employees.map((employee) => (
+          <li key={employee.employee_id}>
+            {employee.manager_id === null
+              ? `${employee.employee_id} has no manager (root).`
+              : `${employee.employee_id} reports to ${employee.manager_id}.`}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function CompareDrawer({ currentDepartment, isOpen, onClose, originalDepartment }: CompareDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
@@ -82,10 +99,12 @@ export function CompareDrawer({ currentDepartment, isOpen, onClose, originalDepa
         <div className="compare-drawer__trees">
           <section className="compare-tree" aria-labelledby="compare-original-heading">
             <h3 id="compare-original-heading">Original</h3>
+            <ReportingRelationships department={originalDepartment} label="Original" />
             <OrgTree department={originalDepartment} readOnly ariaLabel="Original department reporting tree" />
           </section>
           <section className="compare-tree" aria-labelledby="compare-current-heading">
             <h3 id="compare-current-heading">Current</h3>
+            <ReportingRelationships department={currentDepartment} label="Current" />
             <OrgTree department={currentDepartment} readOnly ariaLabel="Current department reporting tree" />
           </section>
         </div>

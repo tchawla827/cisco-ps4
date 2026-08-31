@@ -59,3 +59,41 @@ backend-snapshot rationale.
 
 Task 12 is the approved point for frontend interaction tests, so this task adds
 no permanent component test. It has repeatable live-browser evidence instead.
+
+## Fix Round 1/5 — Read-only chart text alternative
+
+Review found that `role="img"` makes each read-only SVG atomic to assistive
+technology, hiding its descendant node labels. The visual charts therefore did
+not provide the original/current manager difference to screen-reader users.
+
+`CompareDrawer` now renders a visually-hidden semantic heading and source-order
+list in each comparison section. Each list is generated directly from that
+section's `DepartmentView.employees` and `manager_id` fields: root employees
+state that they have no manager, and every other employee states its direct
+manager. The summaries are explicitly titled `Original reporting relationships`
+and `Current reporting relationships`; no hierarchy, rollup, or history is
+calculated on the client.
+
+TDD evidence:
+
+```text
+$ cd frontend && npm test -- src/components/CompareDrawer.test.tsx
+RED: failed because Original reporting relationships was absent.
+
+GREEN: 1 test passed after adding the semantic relationship lists.
+
+$ cd frontend && npm test
+Test Files  3 passed (3)
+Tests  5 passed (5)
+
+$ cd frontend && npm run build
+tsc -b && vite build completed successfully
+
+$ cd frontend && npm run lint
+oxlint completed with no findings
+```
+
+The focused component test asserts the list order is the supplied employee
+source order and proves the visible-to-screen-readers distinction:
+`LEAD_A reports to MGR_A.` in Original versus `LEAD_A reports to MGR_C.` in
+Current.
