@@ -54,3 +54,13 @@ service that computes transfer candidates before committing state.
 only; expected values live in `backend/tests/oracle.py`, while the service
 retains state only after validation, rebuild, recomputation, and invariant
 checks succeed.
+
+### 2026-08-31 — D3/D6 FastAPI transport boundary
+**Prompt:** Expose scenario selection, department views, transfer preview, and
+reset through a thin local FastAPI API while keeping API-only unloaded-state
+handling outside the domain.
+**Outcome:** accepted. Added `GET /api/scenarios` and preview before approval
+(D3), with `NO_DEPARTMENT_LOADED` returned only by the API as a direct 409
+JSON envelope (D6). Pydantic models normalize derived tree and rollup state
+into stable response views; business validation and transfer precedence remain
+in pure domain and service code.
