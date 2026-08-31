@@ -6,6 +6,7 @@ from app.data.scenarios import SCENARIOS, Scenario
 from app.domain.errors import DomainError
 from app.domain.models import DepartmentTree, Employee, Rollup
 from app.domain.rollups import assert_root_invariants, calculate_rollups
+from app.domain.roster import apply_add, apply_delete, validate_delete
 from app.domain.transfer import (
     RollupChange,
     TransferImpact,
@@ -93,6 +94,55 @@ class DepartmentService:
             return None
 
         self._current_employees = list(self._original_employees)
+        self._last_successful_transfer = None
+        state = self.get_state()
+        assert state is not None
+        return state
+
+    def add_employee(
+        self,
+        employee_id: str,
+        name: str,
+        role: str,
+        monthly_salary: int,
+        manager_id: str,
+    ) -> DepartmentState | DomainError:
+        if self._current_employees is None:
+            return DomainError("NO_SCENARIO_LOADED", "No scenario is loaded")
+
+        new_employee = Employee(
+            employee_id=employee_id,
+            name=name,
+            role=role,
+            monthly_salary=monthly_salary,
+            manager_id=manager_id,
+        )
+        candidate = apply_add(self._current_employees, new_employee)
+        error = validate_department(candidate)
+        if error is not None:
+            return error
+
+        self._current_employees = candidate
+        self._last_successful_transfer = None
+        state = self.get_state()
+        assert state is not None
+        return state
+
+    def delete_employee(self, employee_id: str) -> DepartmentState | DomainError:
+        if self._current_employees is None:
+            return DomainError("NO_SCENARIO_LOADED", "No scenario is loaded")
+
+        tree = build_tree(self._current_employees)
+        error = validate_delete(tree, employee_id)
+        if error is not None:
+            return error
+
+        candidate = apply_delete(self._current_employees, employee_id)
+        candidate_error = validate_department(candidate)
+        if candidate_error is not None:
+            return candidate_error
+
+        self._current_employees = candidate
         self._last_successful_transfer = None
         state = self.get_state()
         assert state is not None

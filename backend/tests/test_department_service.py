@@ -154,3 +154,84 @@ def test_unknown_scenario_clears_existing_state() -> None:
     assert service._current_employees is None
     assert service._last_successful_transfer is None
     assert service._loaded_scenario is None
+
+
+from app.domain.errors import (
+    EMPLOYEE_HAS_DIRECT_REPORTS,
+    ROOT_DELETE_FORBIDDEN,
+)
+
+
+def test_add_employee_appends_and_recomputes_rollups() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    result = service.add_employee("E7", "New Hire", "IC", 40_000, "LEAD_A")
+
+    assert isinstance(result, DepartmentState)
+    assert [employee.employee_id for employee in result.employees][-1] == "E7"
+    assert result.rollups["LEAD_A"].team_headcount == 4
+    assert result.rollups["HOD"].team_headcount == 13
+    assert result.rollups["HOD"].team_payroll == 821_000 + 40_000
+    assert result.last_successful_transfer is None
+
+
+def test_add_employee_rejects_unknown_manager() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    error = service.add_employee("E7", "New Hire", "IC", 40_000, "MISSING")
+
+    assert getattr(error, "code", None) == "UNKNOWN_MANAGER"
+    assert service.get_state().rollups["HOD"].team_headcount == 12
+
+
+def test_add_employee_rejects_duplicate_id() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    error = service.add_employee("E1", "Duplicate", "IC", 40_000, "LEAD_A")
+
+    assert getattr(error, "code", None) == "DUPLICATE_EMPLOYEE_ID"
+
+
+def test_delete_employee_removes_a_leaf_and_recomputes_rollups() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    result = service.delete_employee("E1")
+
+    assert isinstance(result, DepartmentState)
+    assert "E1" not in [employee.employee_id for employee in result.employees]
+    assert result.rollups["HOD"].team_headcount == 11
+    assert result.last_successful_transfer is None
+
+
+def test_delete_employee_blocked_when_target_has_direct_reports() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    error = service.delete_employee("MGR_A")
+
+    assert getattr(error, "code", None) == EMPLOYEE_HAS_DIRECT_REPORTS
+    assert service.get_state().rollups["HOD"].team_headcount == 12
+
+
+def test_delete_employee_blocked_for_root() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+
+    error = service.delete_employee("HOD")
+
+    assert getattr(error, "code", None) == ROOT_DELETE_FORBIDDEN
+
+
+def test_add_then_delete_clears_stale_transfer_impact() -> None:
+    service = DepartmentService()
+    service.load("main-12")
+    service.transfer("LEAD_A", "MGR_C")
+
+    result = service.add_employee("E7", "New Hire", "IC", 40_000, "LEAD_A")
+
+    assert isinstance(result, DepartmentState)
+    assert result.last_successful_transfer is None
