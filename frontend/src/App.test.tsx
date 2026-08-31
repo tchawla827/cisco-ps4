@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import {
   ApiError,
+  addEmployee,
+  deleteEmployee,
   listScenarios,
   loadDepartment,
   previewTransfer,
@@ -22,6 +24,8 @@ vi.mock('./api/department', async (importOriginal) => {
     previewTransfer: vi.fn(),
     resetDepartment: vi.fn(),
     transfer: vi.fn(),
+    addEmployee: vi.fn(),
+    deleteEmployee: vi.fn(),
   }
 })
 
@@ -87,6 +91,8 @@ const mockedLoadDepartment = vi.mocked(loadDepartment)
 const mockedPreviewTransfer = vi.mocked(previewTransfer)
 const mockedResetDepartment = vi.mocked(resetDepartment)
 const mockedTransfer = vi.mocked(transfer)
+const mockedAddEmployee = vi.mocked(addEmployee)
+const mockedDeleteEmployee = vi.mocked(deleteEmployee)
 
 afterEach(() => {
   cleanup()
@@ -189,5 +195,50 @@ describe('App', () => {
 
     expect(treeItemLabels).not.toContainEqual(expect.stringMatching(/\b(?:moved|changed|preview)\b/i))
     expect(screen.getByRole('treeitem', { name: /HOD.*root employee.*root.*selected/ })).toHaveAttribute('aria-selected', 'true')
+  })
+})
+
+describe('collapsible layout and roster controls', () => {
+  it('collapses and expands the sidebar via its toggle', async () => {
+    await renderLoadedApp()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse Employees' }))
+    expect(screen.getByRole('button', { name: 'Expand Employees' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Employees' }))
+    expect(screen.getByRole('button', { name: 'Collapse Employees' })).toBeInTheDocument()
+  })
+
+  it('adds an employee through the sidebar form and shows a success banner', async () => {
+    mockedAddEmployee.mockResolvedValue({
+      ...loadedDepartment,
+      employees: [...loadedDepartment.employees, {
+        employee_id: 'E7', name: 'New Hire', role: 'IC', monthly_salary: 100, manager_id: 'LEAD_A',
+        children_ids: [], direct_report_count: 0, team_headcount: 1, team_payroll: 100,
+      }],
+    })
+    await renderLoadedApp()
+
+    fireEvent.change(screen.getByLabelText('Employee ID'), { target: { value: 'E7' } })
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'New Hire' } })
+    fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'IC' } })
+    fireEvent.change(screen.getByLabelText('Monthly salary'), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText('Manager'), { target: { value: 'LEAD_A' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add employee' }))
+
+    await waitFor(() => expect(mockedAddEmployee).toHaveBeenCalledWith({
+      employee_id: 'E7', name: 'New Hire', role: 'IC', monthly_salary: 100, manager_id: 'LEAD_A',
+    }))
+    expect(await screen.findByText('Added E7.')).toBeInTheDocument()
+  })
+
+  it('shows the backend error banner when delete is blocked by direct reports', async () => {
+    mockedDeleteEmployee.mockRejectedValue(new ApiError('EMPLOYEE_HAS_DIRECT_REPORTS', 'Employee has direct reports and cannot be deleted'))
+    await renderLoadedApp()
+
+    fireEvent.change(screen.getByLabelText('Delete employee id'), { target: { value: 'MGR_A' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(await screen.findByText('Employee has direct reports and cannot be deleted')).toBeInTheDocument()
   })
 })
