@@ -68,5 +68,13 @@ class TransferRequest(BaseModel):
     new_manager_id: str
 
 
+class AddEmployeeRequest(BaseModel):
+    employee_id: str
+    name: str
+    role: str
+    monthly_salary: int
+    manager_id: str
+
+
 class LoadRequest(BaseModel):
     scenario: str = "main-12"

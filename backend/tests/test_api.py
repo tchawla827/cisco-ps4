@@ -273,3 +273,89 @@ def test_cors_only_allows_configured_vite_origins(client: TestClient) -> None:
 
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
     assert "access-control-allow-origin" not in denied.headers
+
+
+def test_add_employee_appends_and_returns_updated_department(client: TestClient) -> None:
+    load_main(client)
+
+    response = client.post(
+        "/api/department/employees",
+        json={
+            "employee_id": "E7",
+            "name": "New Hire",
+            "role": "IC",
+            "monthly_salary": 40_000,
+            "manager_id": "LEAD_A",
+        },
+    )
+
+    assert response.status_code == 200
+    department = response.json()
+    assert department["employees"][-1]["employee_id"] == "E7"
+    assert department["totals"]["employee_count"] == 13
+    assert department["totals"]["total_payroll"] == 821_000 + 40_000
+
+
+def test_add_employee_rejects_unknown_manager(client: TestClient) -> None:
+    load_main(client)
+
+    response = client.post(
+        "/api/department/employees",
+        json={
+            "employee_id": "E7",
+            "name": "New Hire",
+            "role": "IC",
+            "monthly_salary": 40_000,
+            "manager_id": "MISSING",
+        },
+    )
+
+    assert_error(response, 400, "UNKNOWN_MANAGER")
+
+
+def test_add_employee_before_load_returns_no_department_error(client: TestClient) -> None:
+    response = client.post(
+        "/api/department/employees",
+        json={
+            "employee_id": "E7",
+            "name": "New Hire",
+            "role": "IC",
+            "monthly_salary": 40_000,
+            "manager_id": "LEAD_A",
+        },
+    )
+
+    assert_error(response, 409, "NO_DEPARTMENT_LOADED")
+
+
+def test_delete_employee_removes_leaf_and_returns_updated_department(client: TestClient) -> None:
+    load_main(client)
+
+    response = client.delete("/api/department/employees/E1")
+
+    assert response.status_code == 200
+    department = response.json()
+    assert "E1" not in [employee["employee_id"] for employee in department["employees"]]
+    assert department["totals"]["employee_count"] == 11
+
+
+def test_delete_employee_blocked_when_target_has_direct_reports(client: TestClient) -> None:
+    load_main(client)
+
+    response = client.delete("/api/department/employees/MGR_A")
+
+    assert_error(response, 400, "EMPLOYEE_HAS_DIRECT_REPORTS")
+
+
+def test_delete_employee_blocked_for_root(client: TestClient) -> None:
+    load_main(client)
+
+    response = client.delete("/api/department/employees/HOD")
+
+    assert_error(response, 400, "ROOT_DELETE_FORBIDDEN")
+
+
+def test_delete_employee_before_load_returns_no_department_error(client: TestClient) -> None:
+    response = client.delete("/api/department/employees/E1")
+
+    assert_error(response, 409, "NO_DEPARTMENT_LOADED")

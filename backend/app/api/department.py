@@ -7,6 +7,7 @@ from app.data.scenarios import SCENARIOS
 from app.domain.errors import DomainError
 from app.domain.transfer import TransferImpact
 from app.models.department import (
+    AddEmployeeRequest,
     DepartmentTotalsView,
     DepartmentView,
     EmployeeView,
@@ -163,3 +164,33 @@ def reset_department() -> DepartmentView | JSONResponse:
     if state is None:
         return _no_department_response()
     return _department_view(state)
+
+
+@router.post("/department/employees", response_model=DepartmentView)
+def add_employee(request: AddEmployeeRequest) -> DepartmentView | JSONResponse:
+    state = department_service.get_state()
+    if state is None:
+        return _no_department_response()
+
+    result = department_service.add_employee(
+        request.employee_id,
+        request.name,
+        request.role,
+        request.monthly_salary,
+        request.manager_id,
+    )
+    if isinstance(result, DomainError):
+        return _error_response(result)
+    return _department_view(result)
+
+
+@router.delete("/department/employees/{employee_id}", response_model=DepartmentView)
+def delete_employee(employee_id: str) -> DepartmentView | JSONResponse:
+    state = department_service.get_state()
+    if state is None:
+        return _no_department_response()
+
+    result = department_service.delete_employee(employee_id)
+    if isinstance(result, DomainError):
+        return _error_response(result)
+    return _department_view(result)
