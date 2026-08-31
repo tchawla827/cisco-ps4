@@ -23,3 +23,11 @@ def build_tree(employees: Sequence[Employee]) -> DepartmentTree:
         employee_by_id=employee_by_id,
         children_by_id=children_by_id,
     )
+
+
+def collect_subtree_ids(tree: DepartmentTree, employee_id: str) -> list[str]:
+    """Collect an employee and descendants in source-order preorder."""
+    employee_ids = [employee_id]
+    for child_id in tree.children_by_id[employee_id]:
+        employee_ids.extend(collect_subtree_ids(tree, child_id))
+    return employee_ids

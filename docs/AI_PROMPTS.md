@@ -31,3 +31,11 @@ test-first, preserving pass and source order, frozen `Employee`, and avoiding
 `sorted()` in domain and service code.
 **Outcome:** accepted. Added the validator plus only the minimal validated-input
 tree builder required by defensive pass 6; full tree behavior remains Step 3.
+
+### 2026-08-31 — Step 3 tree construction and rollups
+**Prompt:** Complete source-order tree construction and exact integer postorder
+rollups test-first, with root invariant failures raising exceptions and the
+independent oracle kept outside production code.
+**Outcome:** accepted. Used recursive preorder for subtree collection and
+postorder for rollups; source-order appends preserve sibling ordering without
+sorting, and the root guard raises `RootInvariantError` on corrupted totals.

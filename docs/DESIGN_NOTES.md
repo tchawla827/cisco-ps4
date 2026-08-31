@@ -32,3 +32,13 @@ Load validation is a six-pass first-error contract: fields, duplicates, root
 count, manager references, cycles, then defensive connectivity. Records are
 examined in source order within every pass; manager-reference checks share one
 loop so an earlier unknown manager precedes a later self-manager.
+
+### 2026-08-31 — D8 DepartmentTree source-order employees
+`DepartmentTree` carries the canonical source-order employee tuple alongside
+its indexes and child lists. This keeps order available to every derived domain
+calculation without passing a parallel employee collection through each API.
+
+### 2026-08-31 — Full recompute with postorder rollups
+Rollups are rebuilt with a postorder traversal after each candidate hierarchy
+change. At the 30-employee limit, a full exact-integer recomputation is cheap,
+easier to audit, and avoids fragile incremental ancestor updates.
